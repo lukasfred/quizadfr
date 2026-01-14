@@ -2,7 +2,7 @@
   "name": "Quiz Application",
   "short_name": "Quiz App",
   "description": "Aplikacja quizowa z fiszkami, trybem nauki i śledzeniem postępów",
-  "start_url": "./quiz-1.0.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#fafafa",
   "theme_color": "#2563eb",
