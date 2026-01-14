@@ -1,7 +1,7 @@
 {
-  "name": "Quiz Application - Professional Edition",
+  "name": "Quiz Application",
   "short_name": "Quiz App",
-  "description": "Profesjonalna aplikacja quizowa z fiszkami, trybem nauki i śledzeniem postępów",
+  "description": "Aplikacja quizowa z fiszkami, trybem nauki i śledzeniem postępów",
   "start_url": "./quiz-1.0.html",
   "display": "standalone",
   "background_color": "#fafafa",
