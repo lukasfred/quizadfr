@@ -5161,6 +5161,69 @@
             padding-bottom: 80px;
         }
 
+        /* ========== POPRAWKI MOBILE - UKRYWANIE BOTTOM NAV W AKTYWNYCH SESJACH ========== */
+        
+        /* Ukryj bottom navigation podczas testu/praktyki/flashcard */
+        body.in-test .bottom-nav,
+        body.in-practice .bottom-nav,
+        body.in-flashcards .bottom-nav {
+            display: none !important;
+        }
+
+        body.in-test .container,
+        body.in-practice .container,
+        body.in-flashcards .container {
+            padding-bottom: 20px !important;
+        }
+
+        /* Przyciski test/praktyka zawsze widoczne nad bottom-nav */
+        @media (max-width: 768px) {
+            #test-interface button[onclick="window.finishTest()"],
+            #practice-interface button[onclick="window.endPracticeEarly()"] {
+                position: sticky;
+                bottom: 20px;
+                z-index: 9998;
+                margin-top: 20px;
+                margin-bottom: 20px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            }
+            
+            /* Fiszki - scroll dla długich treści */
+            .flashcard-content {
+                overflow-y: auto;
+                max-height: 250px;
+            }
+            
+            .flashcard-rating button {
+                font-size: var(--text-sm);
+                padding: 12px 16px;
+            }
+            
+            /* Dodaj padding dla bottom-nav gdy jest widoczne */
+            body.has-bottom-nav .flashcard-container {
+                margin-bottom: 80px;
+            }
+        }
+        
+        /* Small mobile - dodatkowe poprawki */
+        @media (max-width: 480px) {
+            #test-interface button[onclick="window.finishTest()"],
+            #practice-interface button[onclick="window.endPracticeEarly()"] {
+                bottom: 10px;
+                margin-top: 15px;
+                margin-bottom: 15px;
+            }
+            
+            .flashcard-content {
+                max-height: 200px;
+            }
+            
+            .flashcard-rating button {
+                padding: 10px 12px;
+                font-size: var(--text-xs);
+            }
+        }
+
         /* Hamburger Menu (hidden on desktop) */
         .hamburger-menu {
             display: none;
@@ -7759,6 +7822,9 @@
         let currentFlashcardMode = null; // Track if we're in SRS mode
 
         function startFlashcards() {
+            // Ukryj bottom nav na mobile podczas fiszek
+            document.body.classList.add('in-flashcards');
+
             const category = document.getElementById("flashcardCategory").value;
             const mode = document.getElementById("flashcardMode").value;
             const count = document.getElementById("flashcardCount").value;
@@ -8067,6 +8133,9 @@
         }
 
         function exitFlashcards() {
+            // Pokaż bottom nav po wyjściu z fiszek
+            document.body.classList.remove('in-flashcards');
+
             document.getElementById("flashcard-setup").classList.remove("hidden");
             document.getElementById("flashcard-active").classList.add("hidden");
             document.getElementById("flashcard-complete").classList.add("hidden");
@@ -10422,6 +10491,9 @@
         function startTest() {
             cleanQuestionsData();
 
+            // Ukryj bottom nav na mobile podczas testu
+            document.body.classList.add('in-test');
+
             if (questions.length === 0) {
                 alert("Brak pytań w bazie!");
                 return;
@@ -10609,6 +10681,9 @@
         }
 
         function finishTest() {
+            // Pokaż bottom nav po zakończeniu testu
+            document.body.classList.remove('in-test');
+
             // Stop timer if running
             stopTestTimer();
 
@@ -10704,6 +10779,9 @@
         // ========== TRYB NAUKI ==========
         function startPractice() {
             cleanQuestionsData();
+
+            // Ukryj bottom nav na mobile podczas nauki
+            document.body.classList.add('in-practice');
 
             if (questions.length === 0) {
                 showToast("Brak pytań w bazie!", "error");
@@ -11180,6 +11258,9 @@
         }
 
         function finishPractice() {
+            // Pokaż bottom nav po zakończeniu nauki
+            document.body.classList.remove('in-practice');
+
             // Ochrona przed dzieleniem przez zero
             const totalQuestions = practiceQuestions.length || 1;
             const pct = totalQuestions > 0 ? (practiceCorrect / totalQuestions * 100).toFixed(1) : "0.0";
