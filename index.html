@@ -5187,21 +5187,47 @@
                 margin-bottom: 20px;
                 box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             }
-            
+
+            /* Tryb nauki - poprawa wyświetlania */
+            .practice-stats {
+                margin-bottom: 20px;
+            }
+
+            #practice-question-container {
+                margin-bottom: 15px;
+            }
+
+            #practice-feedback {
+                margin-bottom: 15px;
+            }
+
             /* Fiszki - scroll dla długich treści */
             .flashcard-content {
                 overflow-y: auto;
                 max-height: 250px;
             }
-            
+
             .flashcard-rating button {
                 font-size: var(--text-sm);
                 padding: 12px 16px;
             }
-            
+
             /* Dodaj padding dla bottom-nav gdy jest widoczne */
             body.has-bottom-nav .flashcard-container {
                 margin-bottom: 80px;
+            }
+
+            /* Opis klawiszy na dole ekranu w trybie fiszek */
+            .flashcard-keyboard-hint {
+                margin-top: 20px;
+                margin-bottom: 10px;
+                font-size: 11px;
+                padding: 8px 12px;
+            }
+
+            .flashcard-keyboard-hint kbd {
+                padding: 3px 6px;
+                font-size: 10px;
             }
         }
         
@@ -5213,14 +5239,45 @@
                 margin-top: 15px;
                 margin-bottom: 15px;
             }
-            
+
+            /* Tryb nauki - jeszcze mniejsze marginesy */
+            .practice-stats {
+                margin-bottom: 15px;
+                padding: 12px;
+            }
+
+            .practice-stats h3 {
+                font-size: var(--text-lg);
+            }
+
+            #practice-question-container {
+                margin-bottom: 12px;
+            }
+
+            #practice-feedback {
+                margin-bottom: 12px;
+            }
+
             .flashcard-content {
                 max-height: 200px;
             }
-            
+
             .flashcard-rating button {
                 padding: 10px 12px;
                 font-size: var(--text-xs);
+            }
+
+            /* Opis klawiszy - jeszcze mniejszy na small mobile */
+            .flashcard-keyboard-hint {
+                font-size: 10px;
+                padding: 6px 10px;
+                margin-top: 15px;
+                margin-bottom: 8px;
+            }
+
+            .flashcard-keyboard-hint kbd {
+                padding: 2px 5px;
+                font-size: 9px;
             }
         }
 
@@ -5952,25 +6009,22 @@
 
                 <div id="practice-interface" class="hidden">
                     <div class="practice-stats">
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
-                            <div>
-                                <h3>📚 Sesja nauki</h3>
-                                <p data-i18n="questionOf">Pytanie <span id="practiceCurrentNumber">1</span> z <span
-                                        id="practiceTotalQuestions">10</span></p>
-                                <p><strong data-i18n="correct">Poprawne:</strong> <span id="practiceCorrect"
-                                        style="color: #28a745;">0</span> | <strong
-                                        data-i18n="incorrect">Błędne:</strong> <span id="practiceIncorrect"
-                                        style="color: #dc3545;">0</span></p>
-                            </div>
-                            <button onclick="window.endPracticeEarly()" class="btn-secondary"
-                                style="white-space: nowrap;" data-i18n="exitPractice">
-                                ⏹️ Zakończ naukę
-                            </button>
+                        <div>
+                            <h3>📚 Sesja nauki</h3>
+                            <p data-i18n="questionOf">Pytanie <span id="practiceCurrentNumber">1</span> z <span
+                                    id="practiceTotalQuestions">10</span></p>
+                            <p><strong data-i18n="correct">Poprawne:</strong> <span id="practiceCorrect"
+                                    style="color: #28a745;">0</span> | <strong
+                                    data-i18n="incorrect">Błędne:</strong> <span id="practiceIncorrect"
+                                    style="color: #dc3545;">0</span></p>
                         </div>
                     </div>
                     <div id="practice-question-container"></div>
                     <div id="practice-feedback"></div>
+                    <button onclick="window.endPracticeEarly()" class="btn-secondary"
+                        style="white-space: nowrap;" data-i18n="exitPractice">
+                        ⏹️ Zakończ naukę
+                    </button>
                 </div>
 
             </div>
@@ -6474,12 +6528,6 @@
                         </div>
                     </div>
 
-                    <div class="flashcard-keyboard-hint">
-                        <kbd>Spacja</kbd> Odkryj | SRS: <kbd>1</kbd> Ponów <kbd>2</kbd> Trudne <kbd>3</kbd> Dobrze
-                        <kbd>4</kbd> Łatwe | Normalny: <kbd>1</kbd> Nie <kbd>2</kbd> Tak | <kbd>←</kbd><kbd>→</kbd>
-                        Nawigacja
-                    </div>
-
                     <div class="flashcard-container">
                         <div class="flashcard" id="flashcard" onclick="window.flipCard()">
                             <div class="flashcard-face flashcard-front">
@@ -6527,6 +6575,12 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="flashcard-keyboard-hint">
+                        <kbd>Spacja</kbd> Odkryj | SRS: <kbd>1</kbd> Ponów <kbd>2</kbd> Trudne <kbd>3</kbd> Dobrze
+                        <kbd>4</kbd> Łatwe | Normalny: <kbd>1</kbd> Nie <kbd>2</kbd> Tak | <kbd>←</kbd><kbd>→</kbd>
+                        Nawigacja
                     </div>
                 </div>
 
