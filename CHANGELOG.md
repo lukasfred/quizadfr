@@ -1,5 +1,51 @@
 # Change Log - Aplikacja Quizowo-Testowa
 
+## [1.14] - 2025-01-15
+
+### 🎨 Poprawka: Zmiana koloru karty odpowiedzi w trybie fiszek
+
+#### Problem
+Karta odpowiedzi (tył karty w trybie fiszek) miała kolor zielony, który był bardzo podobny do koloru prawidłowej odpowiedzi, co powodowało słabą czytelność i mylenie się z kolorami statusu odpowiedzi.
+
+#### Przyczyna
+`.flashcard-back` używał koloru `var(--success-color)` (złty/zielony), który był identyczny lub bardzo podobny do koloru używanego do oznaczania prawidłowych odpowiedzi w innych częściach aplikacji.
+
+#### Rozwiązanie
+Zmieniono gradient karty odpowiedzi z zielonego na fioletowy:
+- **Przed:** `linear-gradient(135deg, var(--success-color) 0%, #059669 100%)` (zielony)
+- **Po:** `linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)` (fioletowy)
+
+Korzyści:
+- ✅ Lepszy kontrast z białym tekstem
+- ✅ Wyraźne odróżnienie od karty pytania (niebieskiej)
+- ✅ Wyraźne odróżnienie od kolorów odpowiedzi (zielony/czerwony)
+- ✅ Lepsza czytelność i estetyka
+
+#### Zmiany w CSS
+
+**Zmieniona reguła CSS:**
+```css
+/* Przed */
+.flashcard-back {
+    background: linear-gradient(135deg, var(--success-color) 0%, #059669 100%);
+    transform: rotateY(180deg);
+    -webkit-transform: rotateY(180deg);
+}
+
+/* Po */
+.flashcard-back {
+    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+    transform: rotateY(180deg);
+    -webkit-transform: rotateY(180deg);
+}
+```
+
+#### Statystyki zmian
+- Linie zmienione: 1
+- Wersja: 1.13 → 1.14
+
+---
+
 ## [1.13] - 2025-01-15
 
 ### 🎴 Poprawki wyświetlania fiszek na mobile
