@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Quiz Application v1.11 -->
+<!-- Quiz Application v1.13 -->
 <!-- Latest updates: Rebuilt flashcard system, improved layout, compact progress panel -->
 <html lang="pl">
 
@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📝 Quiz Application v1.11</title>
+    <title>📝 Quiz Application v1.13</title>
 
     <!-- ========== PWA META TAGS ========== -->
     <link rel="manifest" href="./manifest.json">
@@ -2174,7 +2174,7 @@
         .flashcard-content {
             max-width: 600px;
             width: 100%;
-            text-align: center;
+            text-align: left;
             color: white;
         }
 
@@ -5167,7 +5167,12 @@
         body.in-test .bottom-nav,
         body.in-practice .bottom-nav,
         body.in-flashcards .bottom-nav {
-            display: none !important;
+            display: none;
+        }
+
+        /* Priorytet - pokaż bottom navigation dla zalogowanych użytkowników */
+        body.logged-in:not(.in-test):not(.in-practice):not(.in-flashcards) .bottom-nav {
+            display: flex !important;
         }
 
         body.in-test .container,
@@ -5204,7 +5209,7 @@
             /* Fiszki - scroll dla długich treści */
             .flashcard-content {
                 overflow-y: auto;
-                max-height: 250px;
+                max-height: calc(100vh - 320px);
             }
 
             .flashcard-rating button {
@@ -5259,7 +5264,12 @@
             }
 
             .flashcard-content {
-                max-height: 200px;
+                max-height: calc(100vh - 340px);
+            }
+
+            .flashcard-face {
+                justify-content: flex-start;
+                padding: 20px;
             }
 
             .flashcard-rating button {
@@ -5361,9 +5371,9 @@
             .mobile-nav-overlay {
                 display: none !important;
             }
-
+ 
             /* Show bottom navigation when logged in */
-            .logged-in .bottom-nav {
+            body.logged-in .bottom-nav {
                 display: flex;
             }
 
@@ -5449,6 +5459,7 @@
             }
 
             .flashcard-face {
+                justify-content: flex-start;
                 min-height: 380px;
                 padding: 36px 24px;
             }
@@ -5805,7 +5816,7 @@
     <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="window.closeMobileNav()"></div>
 
     <div class="container">
-        <h1>📝 Aplikacja Quizowo-Testowa <small style="font-size: 0.5em; color: #666;">v1.11</small></h1>
+        <h1>📝 Aplikacja Quizowo-Testowa <small style="font-size: 0.5em; color: #666;">v1.13</small></h1>
 
         <div id="auth-section">
             <div class="question-item">
@@ -6756,6 +6767,7 @@
             if (savedUser && users[savedUser]) {
                 currentUser = savedUser;
                 document.body.classList.add('logged-in');
+                document.body.classList.add('has-bottom-nav');
                 document.getElementById("auth-section").classList.add("hidden");
                 document.getElementById("app-section").classList.remove("hidden");
                 document.getElementById("currentUser").textContent = currentUser;
@@ -7833,6 +7845,7 @@
                 safeSetItem("currentUser", currentUser);
 
                 document.body.classList.add('logged-in');
+                document.body.classList.add('has-bottom-nav');
                 document.getElementById("auth-section").classList.add("hidden");
                 document.getElementById("app-section").classList.remove("hidden");
                 document.getElementById("currentUser").textContent = currentUser;
@@ -7855,6 +7868,7 @@
         function logout() {
             currentUser = null;
             document.body.classList.remove('logged-in');
+            document.body.classList.remove('has-bottom-nav');
 
             // Usuń zalogowanego użytkownika z localStorage
             safeSetItem('currentUser', '');
