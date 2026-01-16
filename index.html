@@ -1,5 +1,5 @@
 <!DOCTYPE html>
- <!-- Quiz Application v1.15 -->
+ <!-- Quiz Application v1.16 -->
 <!-- Latest updates: Rebuilt flashcard system, improved layout, compact progress panel -->
 <html lang="pl">
 
@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📝 Quiz Application v1.15</title>
+    <title>📝 Quiz Application v1.16</title>
 
     <!-- ========== PWA META TAGS ========== -->
     <link rel="manifest" href="./manifest.json">
@@ -5212,6 +5212,31 @@
                 max-height: calc(100vh - 320px);
             }
 
+            /* Flashcard stats - compact layout */
+            .flashcard-stats {
+                margin-top: 8px;
+                gap: 6px;
+            }
+
+            .flashcard-stat {
+                padding: 6px 8px;
+                flex: 1 1 calc(50% - 3px);
+            }
+
+            .flashcard-stat-value {
+                font-size: var(--text-lg);
+            }
+
+            .flashcard-stat-label {
+                font-size: 10px;
+                margin-top: 1px;
+            }
+
+            /* Reduce margin on "wróć do ustawień" button */
+            #flashcard-active button[onclick="window.exitFlashcards()"] {
+                margin-bottom: 10px !important;
+            }
+
             .flashcard-rating button {
                 font-size: var(--text-sm);
                 padding: 12px 16px;
@@ -5265,6 +5290,30 @@
 
             .flashcard-content {
                 max-height: calc(100vh - 340px);
+            }
+
+            /* Flashcard stats - even more compact */
+            .flashcard-stats {
+                margin-top: 6px;
+                gap: 4px;
+            }
+
+            .flashcard-stat {
+                padding: 4px 6px;
+            }
+
+            .flashcard-stat-value {
+                font-size: var(--text-base);
+            }
+
+            .flashcard-stat-label {
+                font-size: 9px;
+                margin-top: 0;
+            }
+
+            /* Even smaller margin on button */
+            #flashcard-active button[onclick="window.exitFlashcards()"] {
+                margin-bottom: 6px !important;
             }
 
             .flashcard-face {
@@ -5816,7 +5865,7 @@
     <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="window.closeMobileNav()"></div>
 
     <div class="container">
-        <h1>📝 QuizApp <small style="font-size: 0.5em; color: #666;">v1.15</small></h1>
+        <h1>📝 QuizApp <small style="font-size: 0.5em; color: #666;">v1.16</small></h1>
 
         <div id="auth-section">
             <div class="question-item">

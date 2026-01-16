@@ -1,5 +1,100 @@
 # Change Log - Aplikacja Quizowo-Testowa
 
+## [1.16] - 2025-01-16
+
+### 🎴 Poprawka: Kompaktowy licznik "umiałem/nie umiałem" w trybie fiszek na mobile
+
+#### Problem
+W trybie mobilnym licznik "umiałem/nie umiałem" zajmował zdecydowanie za dużo miejsca. Istniała też spora przestrzeń między przyciskiem "wróć do ustawień" a ramką z licznikami.
+
+#### Przyczyna
+1. Liczniki miały za duży padding, font-size i marginesy na mobile
+2. Przycisk "wróć do ustawień" miał `margin-bottom: 20px`, co tworzyło zbyt dużo przestrzeni
+
+#### Rozwiązanie
+Zmniejszono wielkość elementów i ułożono liczniki w jednej linii:
+
+**Mobile (max-width: 768px):**
+- `.flashcard-stats`: `margin-top: 8px`, `gap: 6px` (z 8px)
+- `.flashcard-stat`: `padding: 6px 8px`, `flex: 1 1 calc(50% - 3px)`
+- `.flashcard-stat-value`: `font-size: var(--text-lg)` (z var(--text-2xl))
+- `.flashcard-stat-label`: `font-size: 10px`, `margin-top: 1px`
+- Przycisk "wróć do ustawień": `margin-bottom: 10px` (z 20px)
+
+**Small mobile (max-width: 480px):**
+- `.flashcard-stats`: `margin-top: 6px`, `gap: 4px`
+- `.flashcard-stat`: `padding: 4px 6px`
+- `.flashcard-stat-value`: `font-size: var(--text-base)` (jeszcze mniejsze)
+- `.flashcard-stat-label`: `font-size: 9px`, `margin-top: 0`
+- Przycisk "wróć do ustawień": `margin-bottom: 6px` (jeszcze mniejsze)
+
+Korzyści:
+- ✅ Liczniki są w jednej linii i zajmują o połowę mniej miejsca
+- ✅ Mniejsza przestrzeń między przyciskiem "wróć do ustawień" a licznikami
+- ✅ Bardziej kompaktowy interfejs na małych ekranach
+- ✅ Więcej miejsca na treść fiszki
+
+#### Zmiany w CSS
+
+**Nowe reguły CSS (mobile):**
+```css
+/* Flashcard stats - compact layout */
+.flashcard-stats {
+    margin-top: 8px;
+    gap: 6px;
+}
+
+.flashcard-stat {
+    padding: 6px 8px;
+    flex: 1 1 calc(50% - 3px);
+}
+
+.flashcard-stat-value {
+    font-size: var(--text-lg);
+}
+
+.flashcard-stat-label {
+    font-size: 10px;
+    margin-top: 1px;
+}
+
+/* Reduce margin on "wróć do ustawień" button */
+#flashcard-active button[onclick="window.exitFlashcards()"] {
+    margin-bottom: 10px !important;
+}
+```
+
+**Nowe reguły CSS (small mobile):**
+```css
+.flashcard-stats {
+    margin-top: 6px;
+    gap: 4px;
+}
+
+.flashcard-stat {
+    padding: 4px 6px;
+}
+
+.flashcard-stat-value {
+    font-size: var(--text-base);
+}
+
+.flashcard-stat-label {
+    font-size: 9px;
+    margin-top: 0;
+}
+
+#flashcard-active button[onclick="window.exitFlashcards()"] {
+    margin-bottom: 6px !important;
+}
+```
+
+#### Statystyki zmian
+- Linie zmienione: ~30
+- Wersja: 1.15 → 1.16
+
+---
+
 ## [1.15] - 2025-01-15
 
 ### 🔤 Poprawka: Skrócenie tytułu aplikacji na mobile
