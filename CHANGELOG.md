@@ -1,5 +1,43 @@
 # Change Log - Aplikacja Quizowo-Testowa
 
+## [1.15] - 2025-01-15
+
+### 🔤 Poprawka: Skrócenie tytułu aplikacji na mobile
+
+#### Problem
+Na telefonach przycisk przełącznika trybu ciemnego nachodził na górny tytuł aplikacji "Aplikacja Quizowo-Testowa", przez co numer wersji nie był widoczny.
+
+#### Przyczyna
+Tytuł był zbyt długi (24 znaki) i nie mieścił się w jednym wierszu na małych ekranach przy zachowaniu przycisku przełącznika motywu.
+
+#### Rozwiązanie
+Skrócono tytuł aplikacji z "Aplikacja Quizowo-Testowa" na "QuizApp":
+- **Przed:** "📝 Aplikacja Quizowo-Testowa" (24 znaki)
+- **Po:** "📝 QuizApp" (8 znaków)
+
+Korzyści:
+- ✅ Tytuł mieści się w jednym wierszu na małych ekranach
+- ✅ Numer wersji jest teraz widoczny
+- ✅ Brak nakładania się przycisku przełącznika motywu na tytuł
+- ✅ Lepsza czytelność na urządzeniach mobilnych
+
+#### Zmiany w HTML
+
+**Zmieniony element:**
+```html
+<!-- Przed -->
+<h1>📝 Aplikacja Quizowo-Testowa <small style="font-size: 0.5em; color: #666;">v1.14</small></h1>
+
+<!-- Po -->
+<h1>📝 QuizApp <small style="font-size: 0.5em; color: #666;">v1.15</small></h1>
+```
+
+#### Statystyki zmian
+- Linie zmienione: 1
+- Wersja: 1.14 → 1.15
+
+---
+
 ## [1.14] - 2025-01-15
 
 ### 🎨 Poprawka: Zmiana koloru karty odpowiedzi w trybie fiszek
