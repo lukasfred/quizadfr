@@ -1,5 +1,57 @@
 # Change Log - Aplikacja Quizowo-Testowa
 
+## [1.17] - 2025-01-16
+
+### 🏷️ Dodanie tagów do pytań AI-900 (automatyczne)
+
+#### Opis
+Automatyczne uzupełnienie tagów w pliku `pytania_2026-01-16.json` na podstawie analizy treści pytań i odpowiedzi.
+
+#### Problem
+Plik `pytania_2026-01-16.json` zawierał 294 pytań z kategorią AI-900, ale wszystkie miały puste pole `"tags": []`, co utrudniało wyszukiwanie i organizację pytań w aplikacji.
+
+#### Rozwiązanie
+Stworzono i uruchomiono skrypt Python, który automatycznie przeanalizował treść pytań i dodał odpowiednie tagi na podstawie słów kluczowych dla poszczególnych kategorii tematycznych.
+
+#### Kategorie tagów używane
+- **Computer Vision**: Object Detection, Face Detection, Image Classification, OCR, Tagging, Semantic Segmentation, Bounding Box
+- **Natural Language Processing**: Text Analytics, Translation, Sentiment Analysis, Key Phrase Extraction, Named Entity Recognition, Entity Recognition, Language Detection, Language Understanding (LUIS)
+- **Speech Services**: Speech Recognition, Speech Synthesis, Speech Translation, Text-to-Speech, Speech-to-Text, Voice Recognition, Speaker Recognition, Language Identification
+- **Machine Learning**: Classification, Regression, Clustering, Supervised/Unsupervised, Training, Validation, Evaluation, Feature Engineering, Data Ingestion, Data Transformation
+- **Generative AI**: GPT Models, DALL-E, Image Generation, System Messages, Copilots, Plugins, Safety System, Content Filters, Prompts
+- **Responsible AI**: Fairness, Inclusiveness, Transparency, Privacy, Security, Accountability, Reliability, Safety, NIST Framework, Ethics, Bias
+- **Azure AI Services**: Azure AI Services, Azure AI Language, Azure AI Vision, Azure AI Speech, Azure AI Translator, Custom Vision, Form Recognizer, Azure AI Bot Service, Document Intelligence, Azure Machine Learning, Azure ML Designer, Azure ML Studio, Custom Vision Training, Object Detection Training
+- **Azure ML Components**: Workspace, Compute, Container, Kubernetes, Pipeline, Module, Dataset, Job, Endpoint
+- **Computer Vision Workloads**: Object Detection, Face Detection, Image Classification, Tagging, Semantic Segmentation, Scene Segmentation, Image Analysis, Optical Character Recognition, Face Recognition, Custom Vision
+- **NLP Workloads**: Sentiment, Translation, Text Analysis, Key Phrase Extraction, Entity Extraction, Transcription, Language Detection, Language Understanding (LUIS), Entity Linking
+- **Conversational AI**: Chatbot, Web Chatbot, FAQ, Knowledge Base, Question Answering, Smart Device, Assistant, Voice Assistant
+- **Azure ML Designer Components**: Dataset, Compute, Pipeline, Module
+- **Azure ML Metrics**: Accuracy, Confidence, Root Mean Square Error, Precision, Recall, F1, RMSE, R2, Coefficient of Determination
+
+#### Zmiany w pliku
+- Wszystkie 294 pytania w pliku `pytania_2026-01-16.json` otrzymały tagi
+- Tagi są w formacie tablicy stringów: `["tag1", "tag2", "tag3"]`
+- Format jest zgodny z systemem importu aplikacji
+- Tagi zostały dodane automatycznie na podstawie słów kluczowych w tekście pytań i odpowiedziach
+
+#### Statystyki zmian
+- Liczba pytań przetworzonych: 294
+- Liczba tagów dodanych: ~1200 (średnio ~4 tagi na pytanie)
+- Format: JSON (tablica stringów)
+- Plik wyjściowy: `pytania_2026-01-16.json`
+
+#### Wersja aplikacji
+- Wersja: 1.16 → 1.17
+- Typ zmiany: minor (nowa funkcjonalność - automatyczne tagowanie pytań)
+
+#### Uwagi
+- Tagi są w języku angielskim (ponieważ pytania są po angielsku)
+- Tagi odzwierciają się do treści pytań i prawidłowych odpowiedzi
+- System jest w pełni automatyczny - nie wymaga ręcznego edytowania każdego pytania
+- Możliwość dalszego ulepszania słów kluczowych
+
+---
+
 ## [1.16] - 2025-01-16
 
 ### 🎴 Poprawka: Kompaktowy licznik "umiałem/nie umiałem" w trybie fiszek na mobile
