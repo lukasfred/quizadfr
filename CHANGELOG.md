@@ -1,5 +1,149 @@
 # Change Log - Aplikacja Quizowo-Testowa
 
+## [1.19] - 2025-01-17
+
+### 🎴 Poprawka: Wyświetlanie odpowiedzi na przód karty fiszki
+
+#### Problem
+W trybie fiszek przód karty pokazywał samo pytanie bez odpowiedzi, co uniemożliwiało użytkownikowi zapoznanie się z opcjami przed obrotem karty i sprawdzeniem poprawnej odpowiedzi.
+
+#### Przyczyna
+Domyślny tryb pracy fiszek zakładał, że przód karty zawiera pytanie, a tył karty - odpowiedź. Jednak w przypadku pytań wielokrotnego wyboru (single/multiple) lepiej jest pokazać wszystkie opcje od razu.
+
+#### Rozwiązanie
+
+**1. Dodanie opcji odpowiedzi na przód karty**
+- Dodano nowy kontener `.flashcard-options-front` w HTML (przed przyciskiem "odkryj odpowiedź")
+- Przód karty teraz pokazuje:
+  - Treść pytania
+  - Wszystkie opcje odpowiedzi (bez oznaczenia poprawnej)
+  - Hint: "Kliknij aby odkryć odpowiedź"
+
+**2. Zachowanie poprawnej odpowiedzi na tyle karty**
+- Tył karty dalej pokazuje:
+  - Treść pytania
+  - Wszystkie opcje odpowiedzi **z oznaczeniem poprawnej** (kolor zielony)
+  - Przyciski oceny (Umiem to / Nie umiem lub SRS buttons)
+
+**3. Aktualizacja JavaScript**
+Zmodyfikowano funkcję `showFlashcard()`:
+- Przód karty: renderuje opcje bez oznaczenia poprawnej (wszystkie mają klasę `.flashcard-option`)
+- Tył karty: renderuje opcje z oznaczeniem poprawnej (poprawne mają klasę `.flashcard-option.correct`)
+
+**Przed:**
+```javascript
+// Przód karty - tylko pytanie
+document.getElementById("flashcard-question").innerHTML = sanitizeHTML(q.text);
+
+// Tył karty - pytanie + opcje z oznaczeniem poprawnej
+const optionsHTML = (q.options || []).map((opt, i) => {
+    const isCorrect = (q.correct || []).includes(i + 1);
+    const optionClass = isCorrect ? "flashcard-option correct" : "flashcard-option";
+    return `<div class="${optionClass}">...</div>`;
+}).join("");
+document.getElementById("flashcard-options").innerHTML = optionsHTML;
+```
+
+**Po:**
+```javascript
+// Przód karty - pytanie + opcje (bez oznaczenia)
+const optionsFrontHTML = (q.options || []).map((opt, i) => {
+    return `<div class="flashcard-option">...</div>`;
+}).join("");
+document.getElementById("flashcard-options-front").innerHTML = optionsFrontHTML;
+
+// Tył karty - pytanie + opcje (z oznaczeniem)
+const optionsBackHTML = (q.options || []).map((opt, i) => {
+    const isCorrect = (q.correct || []).includes(i + 1);
+    const optionClass = isCorrect ? "flashcard-option correct" : "flashcard-option";
+    return `<div class="${optionClass}">...</div>`;
+}).join("");
+document.getElementById("flashcard-options").innerHTML = optionsBackHTML;
+```
+
+#### Zmiany w HTML
+
+**Dodany element:**
+```html
+<div class="flashcard-face flashcard-front">
+    <div class="flashcard-content">
+        <div id="flashcard-question" class="question-text"></div>
+        <div class="flashcard-options-front" id="flashcard-options-front"></div>
+        <div class="flashcard-hint">👆 Kliknij aby odkryć odpowiedź</div>
+    </div>
+</div>
+```
+
+#### Zmiany w CSS
+
+**Nowe style dla przodu karty (kompaktowe):**
+```css
+.flashcard-options-front {
+    margin: 20px 0;
+}
+
+.flashcard-options-front .flashcard-option {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    padding: 10px 14px;
+    margin: 6px 0;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.flashcard-options-front .flashcard-option .option-number {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.8);
+    font-size: 14px;
+}
+```
+
+**Dark mode:**
+```css
+body.dark-mode .flashcard-options-front .flashcard-option {
+    background: #0d1117;
+    border: 1px solid #30363d;
+}
+```
+
+**Modern theme:**
+```css
+[data-theme="modern"] .flashcard-options-front .flashcard-option {
+    background: rgba(45, 40, 90, 0.6) !important;
+    border: 1px solid rgba(255, 0, 255, 0.3) !important;
+}
+```
+
+**Mobile (responsive):**
+```css
+.flashcard-options-front .flashcard-option {
+    padding: 10px 12px;
+    margin: 6px 0;
+}
+
+.flashcard-options-front .flashcard-option .option-number {
+    width: 24px;
+    height: 24px;
+    font-size: var(--text-xs);
+}
+```
+
+#### Korzyści
+- ✅ Użytkownik widzi wszystkie opcje odpowiedzi przed obrotem karty
+- ✅ Może przemyśleć odpowiedź przed sprawdzeniem poprawnej
+- ✅ Poprawa UX - bardziej naturalny flow nauki
+- ✅ Kompaktowy rozmiar opcji na przód karty (nie zajmują za dużo miejsca)
+- ✅ Zgodne style dla wszystkich motywów (classic, dark, modern)
+- ✅ Responsywne na wszystkich urządzeniach (desktop, tablet, mobile)
+
+#### Statystyki zmian
+- Linie dodane: ~80
+- Wersja: 1.18 → 1.19
+- Typ zmiany: patch (poprawka UX)
+
+---
+
 ## [1.18] - 2025-01-17
 
 ### 🐛 Poprawka: Błąd przy oznaczaniu pytań do powtórki

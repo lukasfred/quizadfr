@@ -1,5 +1,5 @@
 <!DOCTYPE html>
- <!-- Quiz Application v1.18 -->
+ <!-- Quiz Application v1.19 -->
 <!-- Latest updates: Rebuilt flashcard system, improved layout, compact progress panel -->
 <html lang="pl">
 
@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📝 Quiz Application v1.18</title>
+    <title>📝 Quiz Application v1.19</title>
 
     <!-- ========== PWA META TAGS ========== -->
     <link rel="manifest" href="./manifest.json">
@@ -2259,6 +2259,37 @@
             font-weight: 800;
         }
 
+        .flashcard-options-front {
+            margin: 20px 0;
+        }
+
+        .flashcard-options-front .flashcard-option {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            padding: 10px 14px;
+            margin: 6px 0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .flashcard-options-front .flashcard-option .option-number {
+            width: 28px;
+            height: 28px;
+            background: rgba(255, 255, 255, 0.8);
+            color: #059669;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-weight: 700;
+            font-family: monospace;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
         /* Rating buttons */
         .flashcard-rating {
             display: flex;
@@ -2728,6 +2759,16 @@
 
         body.dark-mode .flashcard-option.correct .option-number {
             background: #ffffff;
+            color: #059669;
+        }
+
+        body.dark-mode .flashcard-options-front .flashcard-option {
+            background: #0d1117;
+            border: 1px solid #30363d;
+        }
+
+        body.dark-mode .flashcard-options-front .flashcard-option .option-number {
+            background: rgba(255, 255, 255, 0.8);
             color: #059669;
         }
 
@@ -4974,6 +5015,19 @@
             color: #10b981 !important;
         }
 
+        [data-theme="modern"] .flashcard-options-front .flashcard-option {
+            background: rgba(45, 40, 90, 0.6) !important;
+            border: 1px solid rgba(255, 0, 255, 0.3) !important;
+            border-radius: 8px !important;
+            padding: 12px 16px !important;
+            margin: 8px 0 !important;
+            color: rgba(255, 255, 255, 0.85) !important;
+        }
+
+        [data-theme="modern"] .flashcard-options-front .flashcard-option .option-number {
+            color: #00ffff !important;
+        }
+
         /* Ordering step row in editor - modern theme */
         [data-theme="modern"] .ordering-step-row {
             background: #1e1b4b !important;
@@ -5669,6 +5723,17 @@
                 font-size: var(--text-sm);
             }
 
+            .flashcard-options-front .flashcard-option {
+                padding: 10px 12px;
+                margin: 6px 0;
+            }
+
+            .flashcard-options-front .flashcard-option .option-number {
+                width: 24px;
+                height: 24px;
+                font-size: var(--text-xs);
+            }
+
             /* Flashcard rating - stacked vertically */
             .flashcard-rating {
                 flex-direction: column;
@@ -5865,7 +5930,7 @@
     <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="window.closeMobileNav()"></div>
 
     <div class="container">
-        <h1>📝 QuizApp <small style="font-size: 0.5em; color: #666;">v1.18</small></h1>
+        <h1>📝 QuizApp <small style="font-size: 0.5em; color: #666;">v1.19</small></h1>
 
         <div id="auth-section">
             <div class="question-item">
@@ -6588,11 +6653,12 @@
                         </div>
                     </div>
 
-                    <div class="flashcard-container">
+                        <div class="flashcard-container">
                         <div class="flashcard" id="flashcard" onclick="window.flipCard()">
                             <div class="flashcard-face flashcard-front">
                                 <div class="flashcard-content">
                                     <div id="flashcard-question" class="question-text"></div>
+                                    <div class="flashcard-options-front" id="flashcard-options-front"></div>
                                     <div class="flashcard-hint">👆 Kliknij aby odkryć odpowiedź</div>
                                 </div>
                             </div>
@@ -8058,8 +8124,19 @@
             // Pytanie (tył karty)
             document.getElementById("flashcard-answer-question").innerHTML = sanitizeHTML(q.text);
 
-            // Opcje odpowiedzi
-            const optionsHTML = (q.options || []).map((opt, i) => {
+            // Opcje odpowiedzi na przód karty (bez oznaczenia poprawnej)
+            const optionsFrontHTML = (q.options || []).map((opt, i) => {
+                return `
+                    <div class="flashcard-option">
+                        <div class="option-number">${i + 1}</div>
+                        <div>${escapeHTML(opt)}</div>
+                    </div>
+                `;
+            }).join("");
+            document.getElementById("flashcard-options-front").innerHTML = optionsFrontHTML;
+
+            // Opcje odpowiedzi na tył karty (z oznaczeniem poprawnej)
+            const optionsBackHTML = (q.options || []).map((opt, i) => {
                 const isCorrect = (q.correct || []).includes(i + 1);
                 const optionClass = isCorrect ? "flashcard-option correct" : "flashcard-option";
                 return `
@@ -8069,7 +8146,7 @@
                     </div>
                 `;
             }).join("");
-            document.getElementById("flashcard-options").innerHTML = optionsHTML;
+            document.getElementById("flashcard-options").innerHTML = optionsBackHTML;
 
             // Ukryj przyciski oceny
             document.getElementById("flashcard-rating").style.display = "none";
