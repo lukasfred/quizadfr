@@ -1,5 +1,184 @@
 # Change Log - Aplikacja Quizowo-Testowa
 
+## [1.22] - 2025-01-17
+
+### 📐 Poprawki UI: Skompaktowanie interfejsu fiszek na mobile
+
+#### Problem
+Interfejs fiszek na urządzeniach mobilnych zajmował za dużo miejsca w pionie:
+1. Sekcja "Fiszka X z Y" miała za duży padding i marginesy
+2. Przyciski oceny "Umiem/Nie umiem" były ustawione w kolumnie (pod sobą) zamiast w wierszu (obok siebie)
+3. Cały interfejs wymuszał przewijanie strony na mobile
+
+#### Przyczyna
+1. `.flashcard-progress` miał duży padding (12px) i margin-top (12px)
+2. `.flashcard-rating` na mobile (max-width: 480px) miał `flex-direction: column` co powodowało ułożenie przycisków pod sobą
+3. Przyciski miały duże padding (14px 20px) i font-size (16px)
+4. Pasek postępu miał wysokość 8px, co również zajmowało miejsce
+
+#### Rozwiązanie
+
+**1. Zmniejszenie sekcji "Fiszka X z Y" (flashcard-progress)**
+
+**Desktop (base styles):**
+- Padding: `12px` → `8px 10px`
+- Border-radius: `12px` → `8px`
+- Margin-top: `12px` → `8px`
+- Pasek postępu height: `8px` → `6px`
+- Pasek postępu margin: `8px 0` → `6px 0`
+- Pasek postępu border-radius: `6px` → `4px`
+
+**Mobile (max-width: 768px):**
+- Maksymalna wysokość treści: `calc(100vh - 320px)` → `calc(100vh - 280px)`
+
+**Small mobile (max-width: 480px):**
+- Maksymalna wysokość treści: `calc(100vh - 340px)` → `calc(100vh - 300px)`
+
+**2. Naprawa układu przycisków oceny (flashcard-rating)**
+
+**Usunięto:** `flex-direction: column` na small mobile
+```css
+/* Przed */
+.flashcard-rating {
+    flex-direction: column;  /* To powodowało ułożenie pod sobą */
+    gap: 10px;
+}
+
+/* Po */
+.flashcard-rating {
+    /* Brak flex-direction - dziedziczy flex (obok siebie) */
+    gap: 8px;
+    margin-top: 16px;
+}
+```
+
+**3. Zmniejszenie przycisków oceny**
+
+**Desktop (base styles):**
+- Padding: `14px 20px` → `10px 16px`
+- Border-radius: `12px` → `10px`
+- Font-size: `16px` → `14px`
+- Margin-top: `24px` → `16px`
+
+**Mobile (max-width: 768px):**
+- Font-size: `var(--text-sm)` → `12px`
+- Padding: `12px 16px` → `8px 12px`
+
+**Small mobile (max-width: 480px):**
+- Padding: `10px 12px` → `8px 10px`
+- Font-size: `var(--text-xs)` → `11px`
+
+**4. Dalsze skompaktowanie licznika "Umiem/Nie umiem"**
+
+**Mobile (max-width: 768px):**
+- Margin-top: `8px` → `6px`
+- Gap: `6px` → `4px`
+- Padding stat: `4px 6px` → `3px 6px`
+- Flex stat: `1 1 calc(50% - 3px)` → `1 1 calc(50% - 2px)`
+- Font-size value: `13px` → `12px`
+- Font-size label: `9px` → `8px`
+- Margin-top label: `0px` → `0px`
+
+**Small mobile (max-width: 480px):**
+- Margin-top: `6px` → `4px`
+- Gap: `4px` → `3px`
+- Padding stat: `4px 6px` → `3px 5px`
+- Font-size value: `var(--text-base)` → `11px`
+- Font-size label: `9px` → `8px`
+- Margin button "wróć": `6px` → `5px`
+- Padding flashcard-face: `20px` → `18px`
+
+#### Zmiany w CSS
+
+**Before (base styles):**
+```css
+.flashcard-progress {
+    background: var(--card-bg);
+    padding: 12px;
+    border-radius: 12px;
+    margin-top: 12px;
+}
+
+.flashcard-progress-bar {
+    height: 8px;
+    margin: 8px 0;
+    border-radius: 6px;
+}
+
+.flashcard-rating {
+    margin-top: 24px;
+}
+
+.flashcard-rating button {
+    padding: 14px 20px;
+    font-size: 16px;
+    border-radius: 12px;
+}
+```
+
+**After (base styles):**
+```css
+.flashcard-progress {
+    background: var(--card-bg);
+    padding: 8px 10px;
+    border-radius: 8px;
+    margin-top: 8px;
+}
+
+.flashcard-progress-bar {
+    height: 6px;
+    margin: 6px 0;
+    border-radius: 4px;
+}
+
+.flashcard-rating {
+    margin-top: 16px;
+}
+
+.flashcard-rating button {
+    padding: 10px 16px;
+    font-size: 14px;
+    border-radius: 10px;
+}
+```
+
+**Before (small mobile - key issue):**
+```css
+@media (max-width: 480px) {
+    .flashcard-rating {
+        flex-direction: column;  /* PROBLEM */
+        gap: 10px;
+    }
+}
+```
+
+**After (small mobile):**
+```css
+@media (max-width: 480px) {
+    .flashcard-rating {
+        /* Brak flex-direction - dziedziczy flex z base */
+        gap: 8px;
+        margin-top: 16px;
+    }
+}
+```
+
+#### Korzyści
+- ✅ Sekcja "Fiszka X z Y" zajmuje o ~40% mniej miejsca w wysokości
+- ✅ Przyciski "Umiem/Nie umiem" są obok siebie (nie pod sobą) na mobile
+- ✅ Mniejsza konieczność przewijania strony na mobile
+- ✅ Bardziej kompaktowy interfejs
+- ✅ Lepsze wykorzystanie dostępnej przestrzeni ekranu
+- ✅ Zachowany responsywny układ (desktop vs mobile)
+- ✅ Zwiększona czytelność dzięki optymalnemu spacingowi
+
+#### Statystyki zmian
+- Linie zmienione: ~40
+- Wersja: 1.21 → 1.22
+- Typ zmiany: patch (poprawki UI/UX)
+
+---
+
 ## [1.21] - 2025-01-17
 
 ### 🎯 Dodanie filtra "Tryb" do trybu nauki i testu

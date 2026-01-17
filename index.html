@@ -1,5 +1,5 @@
 <!DOCTYPE html>
- <!-- Quiz Application v1.21 -->
+ <!-- Quiz Application v1.22 -->
 <!-- Latest updates: Rebuilt flashcard system, improved layout, compact progress panel -->
 <html lang="pl">
 
@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📝 Quiz Application v1.21</title>
+    <title>📝 Quiz Application v1.22</title>
 
     <!-- ========== PWA META TAGS ========== -->
     <link rel="manifest" href="./manifest.json">
@@ -2294,17 +2294,17 @@
         .flashcard-rating {
             display: flex;
             gap: 12px;
-            margin-top: 24px;
+            margin-top: 16px;
             width: 100%;
             max-width: 600px;
         }
 
         .flashcard-rating button {
             flex: 1;
-            padding: 14px 20px;
+            padding: 10px 16px;
             border: none;
-            border-radius: 12px;
-            font-size: 16px;
+            border-radius: 10px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             color: white;
@@ -2360,9 +2360,9 @@
         /* Progress bar */
         .flashcard-progress {
             background: var(--card-bg);
-            padding: 12px;
-            border-radius: 12px;
-            margin-top: 12px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            margin-top: 8px;
             box-shadow: var(--shadow-md);
             text-align: center;
             border: 1px solid var(--border-color);
@@ -2370,11 +2370,11 @@
 
         .flashcard-progress-bar {
             width: 100%;
-            height: 8px;
+            height: 6px;
             background: var(--input-hover);
-            border-radius: 6px;
+            border-radius: 4px;
             overflow: hidden;
-            margin: 8px 0;
+            margin: 6px 0;
         }
 
         .flashcard-progress-fill {
@@ -5266,37 +5266,37 @@
             /* Fiszki - scroll dla długich treści */
             .flashcard-content {
                 overflow-y: auto;
-                max-height: calc(100vh - 320px);
+                max-height: calc(100vh - 280px);
             }
 
             /* Flashcard stats - compact layout */
             .flashcard-stats {
-                margin-top: 8px;
-                gap: 6px;
+                margin-top: 6px;
+                gap: 4px;
             }
 
             .flashcard-stat {
-                padding: 4px 6px;
-                flex: 1 1 calc(50% - 3px);
+                padding: 3px 6px;
+                flex: 1 1 calc(50% - 2px);
             }
 
             .flashcard-stat-value {
-                font-size: 13px;
+                font-size: 12px;
             }
 
             .flashcard-stat-label {
-                font-size: 9px;
+                font-size: 8px;
                 margin-top: 0px;
             }
 
             /* Reduce margin on "wróć do ustawień" button */
             #flashcard-active button[onclick="window.exitFlashcards()"] {
-                margin-bottom: 10px !important;
+                margin-bottom: 8px !important;
             }
 
             .flashcard-rating button {
-                font-size: var(--text-sm);
-                padding: 12px 16px;
+                font-size: 12px;
+                padding: 8px 12px;
             }
 
             /* Dodaj padding dla bottom-nav gdy jest widoczne */
@@ -5346,41 +5346,41 @@
             }
 
             .flashcard-content {
-                max-height: calc(100vh - 340px);
+                max-height: calc(100vh - 300px);
             }
 
             /* Flashcard stats - even more compact */
             .flashcard-stats {
-                margin-top: 6px;
-                gap: 4px;
+                margin-top: 4px;
+                gap: 3px;
             }
 
             .flashcard-stat {
-                padding: 4px 6px;
+                padding: 3px 5px;
             }
 
             .flashcard-stat-value {
-                font-size: var(--text-base);
+                font-size: 11px;
             }
 
             .flashcard-stat-label {
-                font-size: 9px;
+                font-size: 8px;
                 margin-top: 0;
             }
 
             /* Even smaller margin on button */
             #flashcard-active button[onclick="window.exitFlashcards()"] {
-                margin-bottom: 6px !important;
+                margin-bottom: 5px !important;
             }
 
             .flashcard-face {
                 justify-content: flex-start;
-                padding: 20px;
+                padding: 18px;
             }
 
             .flashcard-rating button {
-                padding: 10px 12px;
-                font-size: var(--text-xs);
+                padding: 8px 10px;
+                font-size: 11px;
             }
 
             /* Opis klawiszy - jeszcze mniejszy na small mobile */
@@ -5582,8 +5582,8 @@
 
             /* Flashcard rating buttons */
             .flashcard-rating {
-                gap: 12px;
-                margin-top: 24px;
+                gap: 8px;
+                margin-top: 16px;
             }
 
             .flashcard-rating button {
@@ -5933,7 +5933,7 @@
     <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="window.closeMobileNav()"></div>
 
     <div class="container">
-        <h1>📝 QuizApp <small style="font-size: 0.5em; color: #666;">v1.21</small></h1>
+        <h1>📝 QuizApp <small style="font-size: 0.5em; color: #666;">v1.22</small></h1>
 
         <div id="auth-section">
             <div class="question-item">
