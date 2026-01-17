@@ -1,5 +1,92 @@
 # Change Log - Aplikacja Quizowo-Testowa
 
+## [1.20] - 2025-01-17
+
+### 📐 Poprawki UI: Kompaktowy licznik i lepsza kontrastowość numeracji w fiszkach
+
+#### Problem 1
+Element flashcard-stats (licznik "Fiszka X z Y" i przyciski "Umiałem/Nie umiałem") zajmował zbyt dużo miejsca, szczególnie na urządzeniach mobilnych, co wymuszało przewijanie strony.
+
+#### Problem 2
+W motywie neon (modern) kolor numeracji odpowiedzi (#00ffff - cyan) zlewał się z tłem, przez co był słabo widoczny.
+
+#### Rozwiązanie 1: Zmniejszenie elementu flashcard-stats o połowę
+
+**Desktop:**
+- `.flashcard-stat` padding: `8px 12px` → `4px 8px`
+- `.flashcard-stat-value` font-size: `18px` → `14px`
+- `.flashcard-stat-label` font-size: `11px` → `9px`
+- `.flashcard-stat` border-radius: `8px` → `6px`
+- `.flashcard-stat-label` margin-top: `2px` → `1px`
+
+**Mobile:**
+- `.flashcard-stat` padding: `6px 8px` → `4px 6px`
+- `.flashcard-stat-value` font-size: `var(--text-lg)` → `13px`
+- `.flashcard-stat-label` font-size: `10px` → `9px`
+- `.flashcard-stat-label` margin-top: `1px` → `0px`
+
+#### Rozwiązanie 2: Poprawa kontrastowości numeracji w motywie neon
+
+Zmieniono kolor numeracji w motywie modern/neon:
+- **Przed**: numeracja `#00ffff` (cyan) bez tła
+- **Po**: numeracja z białym tłem `#ffffff` i fioletowym tekstem `#7c3aed`
+
+**Zmienione elementy:**
+```css
+/* Przed */
+[data-theme="modern"] .flashcard-option .option-number {
+    color: #00ffff !important;
+}
+
+/* Po */
+[data-theme="modern"] .flashcard-option .option-number {
+    background: #ffffff !important;
+    color: #7c3aed !important;
+}
+```
+
+**Poprawne odpowiedzi:**
+```css
+/* Przed */
+[data-theme="modern"] .flashcard-option.correct .option-number {
+    color: #10b981 !important;
+}
+
+/* Po */
+[data-theme="modern"] .flashcard-option.correct .option-number {
+    background: #ffffff !important;
+    color: #10b981 !important;
+}
+```
+
+**Opcje na przód karty:**
+```css
+/* Przed */
+[data-theme="modern"] .flashcard-options-front .flashcard-option .option-number {
+    color: #00ffff !important;
+}
+
+/* Po */
+[data-theme="modern"] .flashcard-options-front .flashcard-option .option-number {
+    background: #ffffff !important;
+    color: #7c3aed !important;
+}
+```
+
+#### Korzyści
+- ✅ Licznik fiszek i przyciski oceny zajmują o połowę mniej miejsca
+- ✅ Brak konieczności przewijania strony na mobile przy widocznym interfejsie
+- ✅ Numeracja odpowiedzi w motywie neon jest wyraźnie widoczna dzięki białemu tłu
+- ✅ Lepsza kontrastowość poprawia czytelność i dostępność
+- ✅ Bardziej kompaktowy interfejs na małych ekranach
+
+#### Statystyki zmian
+- Linie zmienione: ~30
+- Wersja: 1.19 → 1.20
+- Typ zmiany: patch (poprawki UI/UX)
+
+---
+
 ## [1.19] - 2025-01-17
 
 ### 🎴 Poprawka: Wyświetlanie odpowiedzi na przód karty fiszki

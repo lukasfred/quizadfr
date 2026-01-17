@@ -1,5 +1,5 @@
 <!DOCTYPE html>
- <!-- Quiz Application v1.19 -->
+ <!-- Quiz Application v1.20 -->
 <!-- Latest updates: Rebuilt flashcard system, improved layout, compact progress panel -->
 <html lang="pl">
 
@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📝 Quiz Application v1.19</title>
+    <title>📝 Quiz Application v1.20</title>
 
     <!-- ========== PWA META TAGS ========== -->
     <link rel="manifest" href="./manifest.json">
@@ -2393,21 +2393,21 @@
 
         .flashcard-stat {
             text-align: center;
-            padding: 8px 12px;
+            padding: 4px 8px;
             background: var(--input-bg);
-            border-radius: 8px;
+            border-radius: 6px;
         }
 
         .flashcard-stat-value {
-            font-size: 18px;
+            font-size: 14px;
             font-weight: 700;
             color: var(--primary-color);
         }
 
         .flashcard-stat-label {
-            font-size: 11px;
+            font-size: 9px;
             color: var(--text-light);
-            margin-top: 2px;
+            margin-top: 1px;
         }
 
         /* Keyboard hints - compact */
@@ -5008,10 +5008,12 @@
         }
 
         [data-theme="modern"] .flashcard-option .option-number {
-            color: #00ffff !important;
+            background: #ffffff !important;
+            color: #7c3aed !important;
         }
 
         [data-theme="modern"] .flashcard-option.correct .option-number {
+            background: #ffffff !important;
             color: #10b981 !important;
         }
 
@@ -5025,7 +5027,8 @@
         }
 
         [data-theme="modern"] .flashcard-options-front .flashcard-option .option-number {
-            color: #00ffff !important;
+            background: #ffffff !important;
+            color: #7c3aed !important;
         }
 
         /* Ordering step row in editor - modern theme */
@@ -5273,17 +5276,17 @@
             }
 
             .flashcard-stat {
-                padding: 6px 8px;
+                padding: 4px 6px;
                 flex: 1 1 calc(50% - 3px);
             }
 
             .flashcard-stat-value {
-                font-size: var(--text-lg);
+                font-size: 13px;
             }
 
             .flashcard-stat-label {
-                font-size: 10px;
-                margin-top: 1px;
+                font-size: 9px;
+                margin-top: 0px;
             }
 
             /* Reduce margin on "wróć do ustawień" button */
@@ -5930,7 +5933,7 @@
     <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="window.closeMobileNav()"></div>
 
     <div class="container">
-        <h1>📝 QuizApp <small style="font-size: 0.5em; color: #666;">v1.19</small></h1>
+        <h1>📝 QuizApp <small style="font-size: 0.5em; color: #666;">v1.20</small></h1>
 
         <div id="auth-section">
             <div class="question-item">
