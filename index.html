@@ -1,5 +1,5 @@
 <!DOCTYPE html>
- <!-- Quiz Application v1.20 -->
+ <!-- Quiz Application v1.21 -->
 <!-- Latest updates: Rebuilt flashcard system, improved layout, compact progress panel -->
 <html lang="pl">
 
@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📝 Quiz Application v1.20</title>
+    <title>📝 Quiz Application v1.21</title>
 
     <!-- ========== PWA META TAGS ========== -->
     <link rel="manifest" href="./manifest.json">
@@ -5933,7 +5933,7 @@
     <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="window.closeMobileNav()"></div>
 
     <div class="container">
-        <h1>📝 QuizApp <small style="font-size: 0.5em; color: #666;">v1.20</small></h1>
+        <h1>📝 QuizApp <small style="font-size: 0.5em; color: #666;">v1.21</small></h1>
 
         <div id="auth-section">
             <div class="question-item">
@@ -6043,6 +6043,15 @@
                         </select>
                     </div>
                     <div class="form-group">
+                        <label>Tryb:</label>
+                        <select id="testMode">
+                            <option value="all">Wszystkie pytania (oznaczone na początku)</option>
+                            <option value="markedForReview">⭐ Tylko oznaczone do powtórki</option>
+                            <option value="difficult">🔄 Tylko powtórki (pytania oznaczone "Nie umiem")</option>
+                            <option value="srs">🧠 Spaced Repetition (due for review)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label data-i18n="questionCount">Liczba pytań:</label>
                         <select id="questionCount">
                             <option value="10">10</option>
@@ -6111,6 +6120,15 @@
                         <label data-i18n="selectCategory">Kategoria:</label>
                         <select id="practiceCategory">
                             <option value="all" data-i18n="allCategories">Wszystkie kategorie</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Tryb:</label>
+                        <select id="practiceMode">
+                            <option value="all">Wszystkie pytania (oznaczone na początku)</option>
+                            <option value="markedForReview">⭐ Tylko oznaczone do powtórki</option>
+                            <option value="difficult">🔄 Tylko powtórki (pytania oznaczone "Nie umiem")</option>
+                            <option value="srs">🧠 Spaced Repetition (due for review)</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -10702,6 +10720,51 @@
                 [...questions] :
                 questions.filter(q => (q.category || "") === selectedCategory);
 
+            // Filtrowanie po trybie
+            const mode = document.getElementById("testMode").value;
+
+            if (mode === "markedForReview") {
+                filteredQuestions = filteredQuestions.filter(q => q.markedForReview);
+
+                if (filteredQuestions.length === 0) {
+                    showToast("Nie masz jeszcze pytań oznaczonych do powtórki! Oznacz trudne pytania w szczegółach wyników.", "info");
+                    return;
+                }
+            } else if (mode === "difficult") {
+                // Filtruj pytania oznaczone jako "Nie umiem" (SRS rating 0)
+                filteredQuestions = filteredQuestions.filter(q => {
+                    const srsData = getQuestionSRSData(q.id);
+                    return srsData && srsData.rating === 0;
+                });
+
+                if (filteredQuestions.length === 0) {
+                    showToast("Brak pytań oznaczonych jako 'Nie umiem'! Rozwiązuj testy i oznaczaj trudne pytania.", "info");
+                    return;
+                }
+            } else if (mode === "srs") {
+                // Spaced Repetition - tylko pytania due for review
+                filteredQuestions = filteredQuestions.filter(q => isQuestionDueForReview(q.id));
+
+                // Sortuj po nextReviewDate
+                filteredQuestions.sort((a, b) => {
+                    const aData = getQuestionSRSData(a.id);
+                    const bData = getQuestionSRSData(b.id);
+                    const aDate = aData?.nextReview ? new Date(aData.nextReview).getTime() : 0;
+                    const bDate = bData?.nextReview ? new Date(bData.nextReview).getTime() : 0;
+                    return aDate - bDate;
+                });
+
+                if (filteredQuestions.length === 0) {
+                    showToast("Brak pytań do powtórki! Wszystkie są odłożone na przyszłość. 🎉", "success", 3000);
+                    return;
+                }
+            } else {
+                // Tryb "all" - priorytetowe pokazywanie oznaczonych do powtórki
+                const markedQuestions = filteredQuestions.filter(q => q.markedForReview);
+                const otherQuestions = filteredQuestions.filter(q => !q.markedForReview);
+                filteredQuestions = [...markedQuestions, ...otherQuestions];
+            }
+
             if (filteredQuestions.length === 0) {
                 alert("Brak pytań w wybranej kategorii!");
                 return;
@@ -11017,27 +11080,74 @@
 
             filteredQuestions = validQuestions;
 
+            // Filtrowanie po trybie
+            const mode = document.getElementById("practiceMode").value;
+
+            if (mode === "markedForReview") {
+                filteredQuestions = filteredQuestions.filter(q => q.markedForReview);
+
+                if (filteredQuestions.length === 0) {
+                    showToast("Nie masz jeszcze pytań oznaczonych do powtórki! Oznacz trudne pytania w szczegółach wyników.", "info");
+                    return;
+                }
+            } else if (mode === "difficult") {
+                // Filtruj pytania oznaczone jako "Nie umiem" (SRS rating 0)
+                filteredQuestions = filteredQuestions.filter(q => {
+                    const srsData = getQuestionSRSData(q.id);
+                    return srsData && srsData.rating === 0;
+                });
+
+                if (filteredQuestions.length === 0) {
+                    showToast("Brak pytań oznaczonych jako 'Nie umiem'! Rozwiązuj testy i oznaczaj trudne pytania.", "info");
+                    return;
+                }
+            } else if (mode === "srs") {
+                // Spaced Repetition - tylko pytania due for review
+                filteredQuestions = filteredQuestions.filter(q => isQuestionDueForReview(q.id));
+
+                // Sortuj po nextReviewDate
+                filteredQuestions.sort((a, b) => {
+                    const aData = getQuestionSRSData(a.id);
+                    const bData = getQuestionSRSData(b.id);
+                    const aDate = aData?.nextReview ? new Date(aData.nextReview).getTime() : 0;
+                    const bDate = bData?.nextReview ? new Date(bData.nextReview).getTime() : 0;
+                    return aDate - bDate;
+                });
+
+                if (filteredQuestions.length === 0) {
+                    showToast("Brak pytań do powtórki! Wszystkie są odłożone na przyszłość. 🎉", "success", 3000);
+                    return;
+                }
+            }
+
             const count = document.getElementById("practiceQuestionCount").value;
 
-            // Priorytetowe pokazywanie oznaczonych do powtórki
-            const markedQuestions = filteredQuestions.filter(q => q.markedForReview);
-            const otherQuestions = filteredQuestions.filter(q => !q.markedForReview);
+            if (mode === "all") {
+                // Tryb "all" - priorytetowe pokazywanie oznaczonych do powtórki
+                const markedQuestions = filteredQuestions.filter(q => q.markedForReview);
+                const otherQuestions = filteredQuestions.filter(q => !q.markedForReview);
 
-            if (count === "all") {
-                // Wszystkie pytania - oznaczone na początku
-                practiceQuestions = [...markedQuestions, ...otherQuestions];
-            } else {
-                const limit = parseInt(count);
-
-                // Jeśli oznaczonych jest mniej niż limit, dopełnij resztą
-                if (markedQuestions.length >= limit) {
-                    practiceQuestions = markedQuestions.slice(0, limit);
+                if (count === "all") {
+                    practiceQuestions = [...markedQuestions, ...otherQuestions];
                 } else {
-                    practiceQuestions = [...markedQuestions];
-                    const remaining = limit - markedQuestions.length;
-                    // Losuj z pozostałych
-                    const shuffledOthers = [...otherQuestions].sort(() => Math.random() - 0.5);
-                    practiceQuestions = [...practiceQuestions, ...shuffledOthers.slice(0, remaining)];
+                    const limit = parseInt(count);
+
+                    if (markedQuestions.length >= limit) {
+                        practiceQuestions = markedQuestions.slice(0, limit);
+                    } else {
+                        practiceQuestions = [...markedQuestions];
+                        const remaining = limit - markedQuestions.length;
+                        const shuffledOthers = [...otherQuestions].sort(() => Math.random() - 0.5);
+                        practiceQuestions = [...practiceQuestions, ...shuffledOthers.slice(0, remaining)];
+                    }
+                }
+            } else {
+                // Inne tryby (markedForReview, difficult, srs) - ogranicz liczbę
+                if (count !== "all") {
+                    const limit = parseInt(count);
+                    practiceQuestions = filteredQuestions.slice(0, limit);
+                } else {
+                    practiceQuestions = filteredQuestions;
                 }
             }
 
@@ -12728,6 +12838,8 @@
         window.flipCard = flipCard;
         window.rateFlashcard = rateFlashcard;
         window.rateFlashcardSRS = rateFlashcardSRS;
+        window.getQuestionSRSData = getQuestionSRSData;
+        window.isQuestionDueForReview = isQuestionDueForReview;
         window.exitFlashcards = exitFlashcards;
         window.startPractice = startPractice;
         window.togglePracticeOption = togglePracticeOption;

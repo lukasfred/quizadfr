@@ -1,5 +1,146 @@
 # Change Log - Aplikacja Quizowo-Testowa
 
+## [1.21] - 2025-01-17
+
+### 🎯 Dodanie filtra "Tryb" do trybu nauki i testu
+
+#### Problem
+W trybie nauki (practice) oraz trybie testu brakowało filtra "Tryb", który był dostępny w trybie fiszek. Użytkownicy nie mogli wybierać pytań oznaczonych do powtórki, pytań oznaczonych jako "Nie umiem" ani pytań do powtórki w systemie Spaced Repetition.
+
+#### Przyczyna
+Filtr "Tryb" został zaimplementowany tylko dla trybu fiszek, ale nie dla trybu nauki i testu, mimo że te funkcje korzystają z tego samego mechanizmu filtrowania pytań.
+
+#### Rozwiązanie
+
+**1. Dodanie select "Tryb" do HTML**
+
+Dodano select do ustawień trybu testu (po kategorii):
+```html
+<div class="form-group">
+    <label>Tryb:</label>
+    <select id="testMode">
+        <option value="all">Wszystkie pytania (oznaczone na początku)</option>
+        <option value="markedForReview">⭐ Tylko oznaczone do powtórki</option>
+        <option value="difficult">🔄 Tylko powtórki (pytania oznaczone "Nie umiem")</option>
+        <option value="srs">🧠 Spaced Repetition (due for review)</option>
+    </select>
+</div>
+```
+
+Dodano select do ustawień trybu nauki (po kategorii):
+```html
+<div class="form-group">
+    <label>Tryb:</label>
+    <select id="practiceMode">
+        <option value="all">Wszystkie pytania (oznaczone na początku)</option>
+        <option value="markedForReview">⭐ Tylko oznaczone do powtórki</option>
+        <option value="difficult">🔄 Tylko powtórki (pytania oznaczone "Nie umiem")</option>
+        <option value="srs">🧠 Spaced Repetition (due for review)</option>
+    </select>
+</div>
+```
+
+**2. Zmodyfikowanie funkcji startTest()**
+
+Przed filtrowaniem po kategorii dodano filtrowanie po trybie:
+```javascript
+const mode = document.getElementById("testMode").value;
+
+if (mode === "markedForReview") {
+    filteredQuestions = filteredQuestions.filter(q => q.markedForReview);
+    // sprawdzenie czy są pytania...
+} else if (mode === "difficult") {
+    filteredQuestions = filteredQuestions.filter(q => {
+        const srsData = getQuestionSRSData(q.id);
+        return srsData && srsData.rating === 0;
+    });
+    // sprawdzenie czy są pytania...
+} else if (mode === "srs") {
+    filteredQuestions = filteredQuestions.filter(q => isQuestionDueForReview(q.id));
+    // sortowanie po nextReviewDate
+    // sprawdzenie czy są pytania...
+} else {
+    // Tryb "all" - priorytetowe pokazywanie oznaczonych do powtórki
+    const markedQuestions = filteredQuestions.filter(q => q.markedForReview);
+    const otherQuestions = filteredQuestions.filter(q => !q.markedForReview);
+    filteredQuestions = [...markedQuestions, ...otherQuestions];
+}
+```
+
+**3. Zmodyfikowanie funkcji startPractice()**
+
+Zastąpiono sekcję "Priorytetowe pokazywanie oznaczonych do powtórki" logiką obsługującą wszystkie tryby (all, markedForReview, difficult, srs):
+```javascript
+const mode = document.getElementById("practiceMode").value;
+
+if (mode === "markedForReview") {
+    filteredQuestions = filteredQuestions.filter(q => q.markedForReview);
+    // sprawdzenie czy są pytania...
+} else if (mode === "difficult") {
+    filteredQuestions = filteredQuestions.filter(q => {
+        const srsData = getQuestionSRSData(q.id);
+        return srsData && srsData.rating === 0;
+    });
+    // sprawdzenie czy są pytania...
+} else if (mode === "srs") {
+    filteredQuestions = filteredQuestions.filter(q => isQuestionDueForReview(q.id));
+    // sortowanie po nextReviewDate
+    // sprawdzenie czy są pytania...
+}
+
+const count = document.getElementById("practiceQuestionCount").value;
+
+if (mode === "all") {
+    // Priorytetowe pokazywanie oznaczonych do powtórki
+    // ... logika jak wcześniej ...
+} else {
+    // Inne tryby - ogranicz liczbę
+    if (count !== "all") {
+        practiceQuestions = filteredQuestions.slice(0, limit);
+    } else {
+        practiceQuestions = filteredQuestions;
+    }
+}
+```
+
+**4. Dodanie eksportów funkcji SRS**
+
+Dodano funkcje do exports window, aby mogły być używane w startTest i startPractice:
+```javascript
+window.getQuestionSRSData = getQuestionSRSData;
+window.isQuestionDueForReview = isQuestionDueForReview;
+```
+
+#### Opisy trybów
+
+- **Wszystkie pytania (oznaczone na początku)** - Pokazuje wszystkie pytania, z oznaczonymi do powtórki na początku listy
+- **⭐ Tylko oznaczone do powtórki** - Pokazuje tylko pytania oznaczone gwiazdką (markedForReview)
+- **🔄 Tylko powtórki (pytania oznaczone "Nie umiem")** - Pokazuje tylko pytania z SRS rating = 0 (ponownie)
+- **🧠 Spaced Repetition (due for review)** - Pokazuje tylko pytania, które są do powtórki według algorytmu SRS
+
+#### Komunikaty użytkownika
+
+Dla każdego trybu (jeśli brak pytań):
+- `markedForReview`: "Nie masz jeszcze pytań oznaczonych do powtórki! Oznacz trudne pytania w szczegółach wyników."
+- `difficult`: "Brak pytań oznaczonych jako 'Nie umiem'! Rozwiązuj testy i oznaczaj trudne pytania."
+- `srs`: "Brak pytań do powtórki! Wszystkie są odłożone na przyszłość. 🎉"
+
+#### Korzyści
+- ✅ Ujednolicony interfejs wszystkich trybów (test, nauka, fiszki)
+- ✅ Możliwość skupienia się na trudnych pytaniach w trybie nauki i testie
+- ✅ Pełna integracja z systemem Spaced Repetition
+- ✅ Ochrona przed uruchomieniem pustego quizu (komunikaty toast)
+- ✅ Logiczne sortowanie pytań SRS po dacie powtórki
+- ✅ Priorytetowe pokazywanie oznaczonych pytań w trybie "all"
+
+#### Statystyki zmian
+- Linie dodane: ~90
+- Linie zmodyfikowane: ~50
+- Wersja: 1.20 → 1.21
+- Typ zmiany: minor (nowa funkcjonalność - filtr trybu)
+
+---
+
 ## [1.20] - 2025-01-17
 
 ### 📐 Poprawki UI: Kompaktowy licznik i lepsza kontrastowość numeracji w fiszkach
