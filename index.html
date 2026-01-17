@@ -1,5 +1,5 @@
 <!DOCTYPE html>
- <!-- Quiz Application v1.17 -->
+ <!-- Quiz Application v1.18 -->
 <!-- Latest updates: Rebuilt flashcard system, improved layout, compact progress panel -->
 <html lang="pl">
 
@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📝 Quiz Application v1.17</title>
+    <title>📝 Quiz Application v1.18</title>
 
     <!-- ========== PWA META TAGS ========== -->
     <link rel="manifest" href="./manifest.json">
@@ -5865,7 +5865,7 @@
     <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="window.closeMobileNav()"></div>
 
     <div class="container">
-        <h1>📝 QuizApp <small style="font-size: 0.5em; color: #666;">v1.17</small></h1>
+        <h1>📝 QuizApp <small style="font-size: 0.5em; color: #666;">v1.18</small></h1>
 
         <div id="auth-section">
             <div class="question-item">
@@ -11493,50 +11493,105 @@
 
         // ========== BOOKMARKING SYSTEM ==========
         window.toggleBookmarkInPractice = function (questionId) {
-            // Znajdź pytanie w tablicy questions
-            const qIdx = questions.findIndex(q => q.id === questionId);
-            if (qIdx === -1) {
-                showToast("Błąd: nie znaleziono pytania", "error");
-                return;
+            try {
+                if (!questions || !Array.isArray(questions)) {
+                    console.error("questions is not initialized");
+                    showToast("Błąd: dane pytań nie są dostępne", "error");
+                    return;
+                }
+
+                if (!practiceQuestions || !Array.isArray(practiceQuestions)) {
+                    console.error("practiceQuestions is not initialized");
+                    showToast("Błąd: dane sesji nauki nie są dostępne", "error");
+                    return;
+                }
+
+                const normalizedId = questionId;
+                const qIdx = questions.findIndex(q => q.id == normalizedId);
+                if (qIdx === -1) {
+                    showToast("Błąd: nie znaleziono pytania", "error");
+                    return;
+                }
+
+                if (!questions[qIdx]) {
+                    showToast("Błąd: dane pytania są uszkodzone", "error");
+                    return;
+                }
+
+                const wasAnswered = practiceAnswered;
+                const oldPracticeAnswered = practiceAnswered;
+
+                questions[qIdx].markedForReview = !questions[qIdx].markedForReview;
+
+                safeSetItem("quizQuestions", JSON.stringify(questions));
+
+                const practiceQIdx = practiceQuestions.findIndex(q => q.id === questionId);
+                if (practiceQIdx !== -1) {
+                    practiceQuestions[practiceQIdx].markedForReview = questions[qIdx].markedForReview;
+                }
+
+                const isMarked = questions[qIdx].markedForReview;
+                showToast(isMarked ? '⭐ Pytanie oznaczone do powtórki!' : 'Pytanie usunięte z powtórek', isMarked ? 'success' : 'info', 2000);
+
+                const bookmarkBtn = document.querySelector('.bookmark-btn');
+                if (bookmarkBtn) {
+                    const isActive = isMarked ? 'active' : '';
+                    const bgStyle = isMarked ? 'var(--warning-color)' : 'transparent';
+                    const borderStyle = isMarked ? 'var(--warning-color)' : 'var(--border-color)';
+                    const textColor = isMarked ? 'white' : 'var(--text-light)';
+                    const icon = isMarked ? '⭐' : '☆';
+                    const text = isMarked ? 'Oznaczone' : 'Oznacz do powtórki';
+                    bookmarkBtn.className = `bookmark-btn ${isActive}`;
+                    bookmarkBtn.style.background = bgStyle;
+                    bookmarkBtn.style.border = `2px solid ${borderStyle}`;
+                    bookmarkBtn.style.color = textColor;
+                    bookmarkBtn.innerHTML = `${icon} ${text}`;
+                }
+            } catch (error) {
+                console.error("Błąd w toggleBookmarkInPractice:", error);
+                showToast("Błąd podczas oznaczania pytania", "error");
             }
-
-            // Przełącz stan markedForReview
-            questions[qIdx].markedForReview = !questions[qIdx].markedForReview;
-
-            // Zapisz do localStorage
-            safeSetItem("quizQuestions", JSON.stringify(questions));
-
-            // Aktualizuj również w practiceQuestions
-            const practiceQIdx = practiceQuestions.findIndex(q => q.id === questionId);
-            if (practiceQIdx !== -1) {
-                practiceQuestions[practiceQIdx].markedForReview = questions[qIdx].markedForReview;
-            }
-
-            // Odśwież widok
-            renderPracticeQuestion();
-
-            // Pokaż powiadomienie
-            const isMarked = questions[qIdx].markedForReview;
-            showToast(isMarked ? '⭐ Pytanie oznaczone do powtórki!' : 'Pytanie usunięte z powtórek', isMarked ? 'success' : 'info', 2000);
         };
 
         window.toggleBookmarkInQuestions = function (questionId) {
-            const qIdx = questions.findIndex(q => q.id === questionId);
-            if (qIdx === -1) return;
+            try {
+                if (!questions || !Array.isArray(questions)) {
+                    console.error("Błąd w toggleBookmarkInQuestions: questions nie są zainicjalizowane");
+                    showToast("Błąd: dane pytań nie są dostępne", "error");
+                    return;
+                }
 
-            questions[qIdx].markedForReview = !questions[qIdx].markedForReview;
-            safeSetItem("quizQuestions", JSON.stringify(questions));
+                const qIdx = questions.findIndex(q => q.id == questionId);
+                if (qIdx === -1) {
+                    console.error("Błąd: nie znaleziono pytania o ID", questionId);
+                    return;
+                }
 
-            // Odśwież listę pytań
-            renderQuestionsList();
+                questions[qIdx].markedForReview = !questions[qIdx].markedForReview;
+                safeSetItem("quizQuestions", JSON.stringify(questions));
 
-            const isMarked = questions[qIdx].markedForReview;
-            showToast(isMarked ? '⭐ Oznaczone do powtórki!' : 'Usunięte z powtórek', isMarked ? 'success' : 'info', 2000);
+                renderQuestionsList();
+
+                const isMarked = questions[qIdx].markedForReview;
+                showToast(isMarked ? '⭐ Oznaczone do powtórki!' : 'Usunięte z powtórek', isMarked ? 'success' : 'info', 2000);
+            } catch (error) {
+                console.error("Błąd w toggleBookmarkInQuestions:", error);
+                showToast("Błąd podczas oznaczania pytania", "error");
+            }
         };
 
         // Get marked questions count
         function getMarkedQuestionsCount() {
-            return questions.filter(q => q.markedForReview).length;
+            try {
+                if (!questions || !Array.isArray(questions)) {
+                    console.error("Błąd w getMarkedQuestionsCount: questions nie są zainicjalizowane");
+                    return 0;
+                }
+                return questions.filter(q => q.markedForReview).length;
+            } catch (error) {
+                console.error("Błąd w getMarkedQuestionsCount:", error);
+                return 0;
+            }
         }
 
         // ========== NOTES SYSTEM ==========
@@ -11629,7 +11684,7 @@
         window.openNotesModal = function (questionId) {
             currentNotesQuestionId = questionId;
 
-            const question = questions.find(q => q.id === questionId);
+            const question = questions.find(q => q.id == questionId);
             if (!question) {
                 showToast("Błąd: nie znaleziono pytania", "error");
                 return;
@@ -12320,33 +12375,80 @@
 
         // ========== OZNACZANIE DO POWTÓRKI ==========
         function toggleMarkForReview(questionIndex) {
-            const result = users[currentUser].testResults[currentDetailedResultIndex];
-            if (!result || !result.detailedAnswers) return;
+            try {
+                if (!currentUser || !users[currentUser] || !users[currentUser].testResults) {
+                    console.error("Błąd: użytkownik lub wyniki nie są dostępne");
+                    showToast("Błąd: brak danych użytkownika", "error");
+                    return;
+                }
 
-            const answer = result.detailedAnswers[questionIndex];
-            if (!answer || !answer.questionId) return;
+                if (currentDetailedResultIndex === null || currentDetailedResultIndex === undefined) {
+                    console.error("Błąd: currentDetailedResultIndex nie jest ustawione");
+                    showToast("Błąd: brak wybranego wyniku", "error");
+                    return;
+                }
 
-            // Znajdź pytanie w bazie
-            const qIdx = questions.findIndex(q => q.id === answer.questionId);
-            if (qIdx === -1) return;
+                if (!questions || !Array.isArray(questions)) {
+                    console.error("Błąd: questions nie są zainicjalizowane");
+                    showToast("Błąd: brak pytań w bazie", "error");
+                    return;
+                }
 
-            // Przełącz stan markedForReview
-            questions[qIdx].markedForReview = !questions[qIdx].markedForReview;
+                const result = users[currentUser].testResults[currentDetailedResultIndex];
+                if (!result || !result.detailedAnswers) {
+                    console.error("Błąd: wynik lub detailedAnswers nie są dostępne");
+                    return;
+                }
 
-            // Zapisz
-            safeSetItem("quizQuestions", JSON.stringify(questions));
+                if (questionIndex < 0 || questionIndex >= result.detailedAnswers.length) {
+                    console.error("Błąd: nieprawidłowy questionIndex", questionIndex);
+                    return;
+                }
 
-            // Odśwież widok
-            renderDetailedResults();
+                const answer = result.detailedAnswers[questionIndex];
+                if (!answer || !answer.questionId) {
+                    console.error("Błąd: answer lub answer.questionId nie są dostępne");
+                    return;
+                }
 
-            // Pokaż powiadomienie
-            const isMarked = questions[qIdx].markedForReview;
-            showToast(isMarked ? '⭐ Pytanie oznaczone do powtórki!' : 'Pytanie usunięte z powtórek', isMarked ? 'success' : 'info', 2000);
+                const qIdx = questions.findIndex(q => q.id == answer.questionId);
+                if (qIdx === -1) {
+                    console.error("Błąd: nie znaleziono pytania o ID", answer.questionId);
+                    showToast("Błąd: nie znaleziono pytania w bazie", "error");
+                    return;
+                }
+
+                if (!questions[qIdx]) {
+                    console.error("Błąd: pytanie pod indeksem nie istnieje", qIdx);
+                    return;
+                }
+
+                questions[qIdx].markedForReview = !questions[qIdx].markedForReview;
+
+                safeSetItem("quizQuestions", JSON.stringify(questions));
+
+                renderDetailedResults();
+
+                const isMarked = questions[qIdx].markedForReview;
+                showToast(isMarked ? '⭐ Pytanie oznaczone do powtórki!' : 'Pytanie usunięte z powtórek', isMarked ? 'success' : 'info', 2000);
+            } catch (error) {
+                console.error("Błąd w toggleMarkForReview:", error);
+                showToast("Błąd podczas oznaczania pytania", "error");
+            }
         }
 
         function isQuestionMarkedForReview(questionId) {
-            const question = questions.find(q => q.id === questionId);
-            return question && question.markedForReview;
+            try {
+                if (!questions || !Array.isArray(questions)) {
+                    console.error("Błąd w isQuestionMarkedForReview: questions nie są zainicjalizowane");
+                    return false;
+                }
+                const question = questions.find(q => q.id == questionId);
+                return question && question.markedForReview;
+            } catch (error) {
+                console.error("Błąd w isQuestionMarkedForReview:", error);
+                return false;
+            }
         }
 
         function renderDetailedResults() {

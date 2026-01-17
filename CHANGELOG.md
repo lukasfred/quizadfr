@@ -1,5 +1,71 @@
 # Change Log - Aplikacja Quizowo-Testowa
 
+## [1.18] - 2025-01-17
+
+### 🐛 Poprawka: Błąd przy oznaczaniu pytań do powtórki
+
+#### Problem
+Podczas sesji nauki (tryb practice), gdy użytkownik chciał oznaczyć pytanie do powtórki, pojawiał się błąd uniemożliwiający działanie tej funkcji.
+
+#### Przyczyna
+1. **Niedopasowanie typów ID** - ID pytań są liczbami (np. `1737136628000.54321`), ale przycisk w HTML przekazywał je jako stringi (np. `'1737136628000.54321'`)
+   - Kod używał ścisłego porównania `===` co zwracało `false` dla różnych typów
+   - Funkcja `toggleBookmarkInPractice` nie mogła znaleźć pytania w bazie
+
+2. **Brak obsługi błędów** - funkcje oznaczania nie miały bloków try-catch
+
+3. **Błędne odświeżanie widoku** - funkcja `renderPracticeQuestion()` była wywoływana po każdym oznaczeniu, co resetowało stan odpowiedzi
+
+#### Rozwiązanie
+
+**1. Poprawka typu przy porównywaniu ID (=== na ==)**
+Zmieniono porównania w funkcjach:
+- `toggleBookmarkInPractice()` - index.html:11499
+- `toggleBookmarkInQuestions()` - index.html:11564
+- `isQuestionMarkedForReview()` - index.html:12419
+- `openNotesModal()` - index.html:11687
+- `toggleMarkForReview()` - index.html:12441
+
+**Przed:**
+```javascript
+const qIdx = questions.findIndex(q => q.id === questionId);
+```
+
+**Po:**
+```javascript
+const qIdx = questions.findIndex(q => q.id == questionId);
+```
+
+**2. Dodanie obsługi błędów**
+Dodano bloki try-catch w funkcjach:
+- `toggleBookmarkInPractice()` - szczegółowa walidacja stanu
+- `toggleMarkForReview()` - walidacja `currentUser`, `testResults`, `currentDetailedResultIndex`
+- `toggleBookmarkInQuestions()` - walidacja tablicy `questions`
+- `isQuestionMarkedForReview()` - walidacja tablicy `questions`
+- `openNotesModal()` - poprawka porównania ID
+- `getMarkedQuestionsCount()` - walidacja tablicy `questions`
+
+**3. Optymalizacja odświeżania widoku**
+Zamiast wywoływać `renderPracticeQuestion()` (co resetuje stan), funkcja `toggleBookmarkInPractice` teraz:
+- Znajduje przycisk bookmarku w DOM
+- Aktualizuje tylko tekst i styl przycisku
+- **Nie resetuje** stanu odpowiedzi (`practiceAnswered`)
+- **Nie resetuje** wybranych odpowiedzi (`practiceSelectedAnswers`)
+
+#### Korzyści
+- ✅ Oznaczanie pytań do powtórki działa teraz poprawnie w trybie nauki
+- ✅ Stan odpowiedzi jest zachowany po oznaczeniu pytania
+- ✅ Jasne komunikaty o błędach dla użytkownika
+- ✅ Lepsze bezpieczeństwo dzięki walidacji i obsłudze błędów
+- ✅ Poprawa UX - brak utraty postępu podczas sesji nauki
+
+#### Statystyki zmian
+- Linie zmienione: ~120
+- Wersja: 1.17 → 1.18
+- Typ zmiany: patch (poprawki błędów)
+
+---
+
 ## [1.17] - 2025-01-16
 
 ### 🏷️ Dodanie tagów do pytań AI-900 (automatyczne)
