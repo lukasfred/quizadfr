@@ -1,5 +1,135 @@
 # Change Log - Aplikacja Quizowo-Testowa
 
+## [1.26] - 2025-01-17
+
+### 🐛 Poprawka: isValidQuestion() usuwa pytania typu "pairing"
+
+#### Problem
+Pytania typu "Dopasowanie" (pairing) nie były dodawane do bazy i nie można ich było wyszukać.
+
+#### Przyczyna
+Pytania pairing były **zapisywane** do localStorage, ale **usuwaną** przez funkcję `isValidQuestion()` przy ładowaniu danych. Funkcja ta sprawdzała:
+
+```javascript
+function isValidQuestion(q) {
+    // ...
+    if (!Array.isArray(q.options) || q.options.length < 2) return false;  // ❌ Problem
+    if (!Array.isArray(q.correct)) return false;  // ❌ Problem
+    // ...
+}
+```
+
+Dla pytań typu "pairing" w kodzie zapisywania ustawiano:
+```javascript
+// Dla pairing używamy pary jako specjalny atrybut
+options = null; // options nie są używane dla pairing
+correct = null; // correct nie jest używane dla pairing
+```
+
+To powodowało, że pytań pairing nie przechodziły walidację w `isValidQuestion()` i były usuwaną.
+
+#### Rozwiązanie
+
+**Przed:**
+```javascript
+function isValidQuestion(q) {
+    if (!q || typeof q !== 'object') return false;
+    if (!q.text || typeof q.text !== 'string') return false;
+    if (!Array.isArray(q.options) || q.options.length < 2) return false;  // ❌
+    if (!Array.isArray(q.correct)) return false;  // ❌
+    if (!q.id) q.id = Date.now() + Math.random();
+    if (!q.type) q.type = 'single';
+    if (q.imageData && typeof q.imageData === 'string' && !q.imageData.startsWith('data:')) {
+        delete q.imageData;
+    }
+    return true;
+}
+```
+
+**Po:**
+```javascript
+function isValidQuestion(q) {
+    if (!q || typeof q !== 'object') return false;
+    if (!q.text || typeof q.text !== 'string') return false;
+
+    // Dla pairing - waliduj pary zamiast options i correct
+    if (q.type === 'pairing') {
+        if (!Array.isArray(q.pairs) || q.pairs.length < 2) return false;
+        // Waliduj czy każda para ma left i right
+        const hasValidPairs = q.pairs.every(pair =>
+            pair && pair.left && pair.left.trim() !== '' &&
+            pair.right && pair.right.trim() !== ''
+        );
+        if (!hasValidPairs) return false;
+    } else {
+        // Dla innych typów - waliduj options i correct
+        if (!Array.isArray(q.options) || q.options.length < 2) return false;
+        if (!Array.isArray(q.correct)) return false;
+    }
+
+    if (!q.id) q.id = Date.now() + Math.random();
+    if (!q.type) q.type = 'single';
+    if (q.imageData && typeof q.imageData === 'string' && !q.imageData.startsWith('data:')) {
+        delete q.imageData;
+    }
+    return true;
+}
+```
+
+#### Zmiany w logice walidacji
+
+**Nowa walidacja dla "pairing":**
+1. Sprawdza czy `q.pairs` jest tablicą
+2. Sprawdza czy jest minimum 2 pary
+3. Sprawdza czy każda para ma `left` i `right`
+4. Sprawdza czy `left` i `right` nie są puste
+
+**Walidacja dla innych typów (bez zmian):**
+1. Sprawdza `q.options` (tablica, minimum 2 elementy)
+2. Sprawdza `q.correct` (tablica)
+
+#### Lokalizacja
+- **Plik:** `index.html`
+- **Linia:** ~7418-7442
+- **Funkcja:** `isValidQuestion(q)`
+
+#### Jak to naprawiło problem
+
+**Proces zapisywania i ładowania:**
+
+1. **Zapisywanie:** `saveQuestion()` (submit handler)
+   - Tworzy obiekt `questionData` z `pairs`
+   - Dodaje do tablicy `questions`
+   - Zapisuje do localStorage
+   - ✅ **To działało**
+
+2. **Walidacja:** `cleanQuestionsData()` wywołuje `isValidQuestion()`
+   - Sprawdza wszystkie pytania w localStorage
+   - Usuwa pytania nieprzechodzące walidację
+   - ❌ **To usuwało pytania pairing**
+
+3. **Wyświetlanie:** `renderQuestions()` używa walidowanych pytań
+   - Pytania pairing już usunięte
+   - ❌ **To nic nie pokazywało**
+
+**Po naprawie:**
+- Pytania pairing przechodzą walidację
+- Są dostępne w `renderQuestions()`
+- Można je wyszukać
+
+#### Korzyści
+- ✅ Pytania pairing są poprawnie zapisywane i wyświetlane
+- ✅ Można wyszukać pytania pairing przez filtr typów
+- ✅ Walidacja pytań pairing (minimum 2 pary)
+- ✅ Sprawdzanie czy każda para ma oba pola wypełnione
+
+#### Statystyki zmian
+- Linie zmodyfikowane: ~15
+- Wersja: 1.25 → 1.26
+- Typ zmiany: patch (krytyczna poprawka błędu walidacji)
+
+---
+
 ## [1.25] - 2025-01-17
 
 ### 🐛 Poprawka: Błędny selektor w funkcji getPairsData()
