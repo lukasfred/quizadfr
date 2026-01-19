@@ -1,5 +1,53 @@
 # Change Log - Aplikacja Quizowo-Testowa
 
+## [1.24] - 2025-01-17
+
+### 🔍 Poprawka: Dodano filtr typu "pairing" w wyszukiwarce pytań
+
+#### Problem
+W wyszukiwarce pytań w sekcji "Pytania" brakowało filtra dla nowego typu pytania "pairing" (Dopasowanie), który został dodany w wersji 1.23.
+
+#### Rozwiązanie
+Dodano opcję "Dopasowanie (Pairing)" do selecta `#filterType` w wyszukiwarce pytań:
+
+**Przed:**
+```html
+<select id="filterType" onchange="window.filterQuestions()">
+    <option value="all">Wszystkie typy</option>
+    <option value="single">Jedna poprawna</option>
+    <option value="multiple">Wiele poprawnych</option>
+    <option value="ordering">Ułóż w kolejności</option>
+</select>
+```
+
+**Po:**
+```html
+<select id="filterType" onchange="window.filterQuestions()">
+    <option value="all">Wszystkie typy</option>
+    <option value="single">Jedna poprawna</option>
+    <option value="multiple">Wiele poprawnych</option>
+    <option value="ordering">Ułóż w kolejności</option>
+    <option value="pairing">Dopasowanie (Pairing)</option>
+</select>
+```
+
+#### Zmiany
+- **Lokalizacja:** `index.html` (linia ~6576-6582)
+- **Element:** `<select id="filterType">` w sekcji wyszukiwarki pytań
+- **Zmiana:** Dodano `<option value="pairing">Dopasowanie (Pairing)</option>`
+
+#### Korzyści
+- ✅ Użytkownik może filtrować pytania według typu "pairing"
+- ✅ Pełna zgodność filtrowania z nowym typem pytania
+- ✅ Możliwość szybkiego znalezienia wszystkich pytań typu "dopasowanie"
+
+#### Statystyki zmian
+- Linie zmodyfikowane: 1
+- Wersja: 1.23 → 1.24
+- Typ zmiany: patch (poprawka braku w funkcjonalności)
+
+---
+
 ## [1.22] - 2025-01-17
 
 ### 📐 Poprawki UI: Skompaktowanie interfejsu fiszek na mobile
