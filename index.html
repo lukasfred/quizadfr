@@ -1,5 +1,5 @@
 <!DOCTYPE html>
- <!-- Quiz Application v1.22 -->
+ <!-- Quiz Application v1.23 -->
 <!-- Latest updates: Rebuilt flashcard system, improved layout, compact progress panel -->
 <html lang="pl">
 
@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📝 Quiz Application v1.22</title>
+    <title>📝 Quiz Application v1.23</title>
 
     <!-- ========== PWA META TAGS ========== -->
     <link rel="manifest" href="./manifest.json">
@@ -2053,11 +2053,93 @@
             text-decoration: line-through;
         }
 
+        /* Pairing test styles */
+        .pairing-test-item {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+
+        .pairing-instruction {
+            margin-bottom: 15px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .pairing-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+        }
+
+        .pairing-left {
+            flex: 1;
+            font-weight: 600;
+            line-height: 1.5;
+            color: #333;
+        }
+
+        .pairing-select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            min-width: 120px;
+        }
+
         /* Ordering instruction text */
         .ordering-instruction {
             margin-bottom: 10px;
             font-weight: bold;
             color: #333;
+        }
+
+        /* Pairing styles */
+        .pair-row {
+            display: flex;
+            gap: 10px;
+            margin: 5px 0;
+            padding: 8px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+        }
+
+        .pair-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            font-size: 14px;
+        }
+
+        .pair-actions {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .pair-actions button {
+            padding: 6px 10px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .pair-actions button:hover {
+            background: #c82333;
         }
 
         /* Ordering correct sequence container */
@@ -5933,7 +6015,7 @@
     <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="window.closeMobileNav()"></div>
 
     <div class="container">
-        <h1>📝 QuizApp <small style="font-size: 0.5em; color: #666;">v1.22</small></h1>
+        <h1>📝 QuizApp <small style="font-size: 0.5em; color: #666;">v1.23</small></h1>
 
         <div id="auth-section">
             <div class="question-item">
@@ -6236,6 +6318,8 @@
                                             odpowiedzi</option>
                                         <option value="ordering" data-i18n="questionForm.typeOrdering">Ułóż w kolejności
                                             (Ordering)</option>
+                                        <option value="pairing" data-i18n="questionForm.typePairing">Dopasowanie
+                                            (Pairing)</option>
                                     </select>
                                 </div>
 
@@ -6267,6 +6351,20 @@
                                         data-i18n="questionForm.addStep">+ Dodaj krok</button>
                                     <small style="color: #666; display: block; margin-top: 5px;"
                                         data-i18n="questionForm.minMaxSteps">Minimum 2, maksimum 8 kroków.</small>
+                                </div>
+
+                                <!-- Pairing (dla typu pairing) -->
+                                <div id="pairing-container" class="form-group hidden">
+                                    <label data-i18n="questionForm.pairs">Pary do dopasowania:</label>
+                                    <small style="color: #666; display: block; margin-bottom: 10px;"
+                                        data-i18n="questionForm.pairsHint">Dodaj pary elementów do dopasowania (np. kraj - flaga, definicja - pojęcie). Kolejność nie ma znaczenia.</small>
+                                    <div id="pairs-list">
+                                        <!-- Generowane dynamicznie -->
+                                    </div>
+                                    <button type="button" class="add-option-btn" onclick="window.addPair()"
+                                        data-i18n="questionForm.addPair">+ Dodaj parę</button>
+                                    <small style="color: #666; display: block; margin-top: 5px;"
+                                        data-i18n="questionForm.minMaxPairs">Minimum 2, maksimum 10 par.</small>
                                 </div>
 
                                 <div class="form-group">
@@ -8146,27 +8244,49 @@
             document.getElementById("flashcard-answer-question").innerHTML = sanitizeHTML(q.text);
 
             // Opcje odpowiedzi na przód karty (bez oznaczenia poprawnej)
-            const optionsFrontHTML = (q.options || []).map((opt, i) => {
-                return `
+            let optionsFrontHTML = '';
+            let optionsBackHTML = '';
+
+            if (q.type === "pairing") {
+                // Dla pairing - pokaż left items na przód
+                const pairs = q.pairs || [];
+                optionsFrontHTML = pairs.map((pair, i) => `
                     <div class="flashcard-option">
                         <div class="option-number">${i + 1}</div>
-                        <div>${escapeHTML(opt)}</div>
+                        <div>${escapeHTML(pair.left)}</div>
                     </div>
-                `;
-            }).join("");
-            document.getElementById("flashcard-options-front").innerHTML = optionsFrontHTML;
-
-            // Opcje odpowiedzi na tył karty (z oznaczeniem poprawnej)
-            const optionsBackHTML = (q.options || []).map((opt, i) => {
-                const isCorrect = (q.correct || []).includes(i + 1);
-                const optionClass = isCorrect ? "flashcard-option correct" : "flashcard-option";
-                return `
-                    <div class="${optionClass}">
+                `).join("");
+                // Tył karty - pokaż poprawne pary
+                optionsBackHTML = pairs.map((pair, i) => `
+                    <div class="flashcard-option correct">
                         <div class="option-number">${i + 1}</div>
-                        <div>${escapeHTML(opt)}</div>
+                        <div><strong>${escapeHTML(pair.left)}</strong> ↔ ${escapeHTML(pair.right)}</div>
                     </div>
-                `;
-            }).join("");
+                `).join("");
+            } else {
+                // Dla innych typów - pokaż opcje
+                optionsFrontHTML = (q.options || []).map((opt, i) => {
+                    return `
+                        <div class="flashcard-option">
+                            <div class="option-number">${i + 1}</div>
+                            <div>${escapeHTML(opt)}</div>
+                        </div>
+                    `;
+                }).join("");
+                // Tył karty - pokaż opcje z oznaczeniem poprawnej
+                optionsBackHTML = (q.options || []).map((opt, i) => {
+                    const isCorrect = (q.correct || []).includes(i + 1);
+                    const optionClass = isCorrect ? "flashcard-option correct" : "flashcard-option";
+                    return `
+                        <div class="${optionClass}">
+                            <div class="option-number">${i + 1}</div>
+                            <div>${escapeHTML(opt)}</div>
+                        </div>
+                    `;
+                }).join("");
+            }
+
+            document.getElementById("flashcard-options-front").innerHTML = optionsFrontHTML;
             document.getElementById("flashcard-options").innerHTML = optionsBackHTML;
 
             // Ukryj przyciski oceny
@@ -9281,6 +9401,35 @@
                 return;
             }
 
+            // Dla pairing - inny podgląd
+            if (questionType === "pairing") {
+                const pairs = getPairsData();
+                const typeLabel = "Dopasowanie (Pairing)";
+
+                let previewHTML = `
+                    <div class="test-question">
+                        <h4 class="question-type-label">${typeLabel}</h4>
+                        ${(currentImageData && currentImageData.startsWith('data:')) ? `<img src="${currentImageData}" style="max-width: 100%; max-height: 400px; margin: 0 auto 20px auto; border-radius: 8px; border: 2px solid #ddd; display: block;" alt="Podgląd obrazu">` : ''}
+                        <div class="question-text">${questionText || '<em style="color:#999">(Brak treści pytania)</em>'}</div>
+                        <div class="ordering-correct-sequence">
+                            <strong>Prawidłowe pary:</strong>
+                            <ul style="margin: 10px 0 0 20px;">
+                `;
+
+                pairs.forEach((pair, i) => {
+                    previewHTML += `<li><strong>${escapeHTML(pair.left)}</strong> ↔ ${escapeHTML(pair.right)}</li>`;
+                });
+
+                previewHTML += `
+                            </ul>
+                        </div>
+                    </div>
+                `;
+
+                preview.innerHTML = previewHTML;
+                return;
+            }
+
             // Dla single/multiple - zwykły podgląd
             const { options, correct } = getOptionsData();
             const typeLabel = questionType === "single" ? "Jedna poprawna odpowiedź" : "Wiele poprawnych odpowiedzi";
@@ -9370,20 +9519,33 @@
             const questionType = document.getElementById("questionType").value;
             const optionsContainer = document.querySelector(".form-group:has(#options-container)");
             const orderingContainer = document.getElementById("ordering-steps-container");
+            const pairingContainer = document.getElementById("pairing-container");
 
             if (questionType === "ordering") {
                 // Ukryj zwykłe odpowiedzi, pokaż ordering steps
                 optionsContainer.style.display = "none";
                 orderingContainer.classList.remove("hidden");
+                pairingContainer.classList.add("hidden");
                 // Initialize ordering steps if empty
                 if (document.querySelectorAll("#ordering-steps .ordering-step-row").length === 0) {
                     addOrderingStep();
                     addOrderingStep();
                 }
+            } else if (questionType === "pairing") {
+                // Ukryj zwykłe odpowiedzi i ordering, pokaż pairing
+                optionsContainer.style.display = "none";
+                orderingContainer.classList.add("hidden");
+                pairingContainer.classList.remove("hidden");
+                // Initialize pairs if empty
+                if (document.querySelectorAll("#pairs-list .pair-row").length === 0) {
+                    addPair();
+                    addPair();
+                }
             } else {
-                // Pokaż zwykłe odpowiedzi, ukryj ordering steps
+                // Pokaż zwykłe odpowiedzi, ukryj ordering steps i pairing
                 optionsContainer.style.display = "block";
                 orderingContainer.classList.add("hidden");
+                pairingContainer.classList.add("hidden");
                 renderOptions(); // Przeładuj aby zmienić radio/checkbox
             }
             updateLivePreview();
@@ -9545,6 +9707,117 @@
             });
         }
 
+        // ========== PAIRING FUNCTIONS ==========
+        let pairsCount = 0;
+        const MIN_PAIRS = 2;
+        const MAX_PAIRS = 10;
+
+        window.addPair = function () {
+            const container = document.getElementById("pairs-list");
+            const currentCount = document.querySelectorAll("#pairs-list .pair-row").length;
+
+            if (currentCount >= MAX_PAIRS) {
+                showToast(`Maksymalnie ${MAX_PAIRS} par!`, "warning");
+                return;
+            }
+
+            const pairDiv = document.createElement("div");
+            pairDiv.className = "pair-row";
+            pairDiv.dataset.pairIndex = currentCount;
+            pairDiv.innerHTML = `
+                <input type="text" class="pair-input" id="pair-left-${currentCount}" placeholder="Element lewy (np. kraj)" oninput="window.updateLivePreview()">
+                <input type="text" class="pair-input" id="pair-right-${currentCount}" placeholder="Element prawy (np. flaga)" oninput="window.updateLivePreview()">
+                <div class="pair-actions">
+                    <button type="button" onclick="window.removePair(${currentCount})" title="Usuń parę">🗑️</button>
+                </div>
+            `;
+
+            container.appendChild(pairDiv);
+            updateLivePreview();
+        };
+
+        window.removePair = function (index) {
+            const container = document.getElementById("pairs-list");
+            const rows = container.querySelectorAll(".pair-row");
+
+            if (rows.length <= MIN_PAIRS) {
+                showToast(`Minimum ${MIN_PAIRS} pary są wymagane!`, "warning");
+                return;
+            }
+
+            const rowToRemove = container.querySelector(`.pair-row[data-pair-index="${index}"]`);
+            if (rowToRemove) {
+                rowToRemove.remove();
+                renumberPairs();
+                updateLivePreview();
+            }
+        };
+
+        function renumberPairs() {
+            const container = document.getElementById("pairs-list");
+            const rows = container.querySelectorAll(".pair-row");
+
+            rows.forEach((row, i) => {
+                const leftInput = row.querySelector("#pair-left-" + row.dataset.pairIndex);
+                const rightInput = row.querySelector("#pair-right-" + row.dataset.pairIndex);
+                const deleteBtn = row.querySelector("button");
+
+                if (leftInput) {
+                    leftInput.id = `pair-left-${i}`;
+                }
+                if (rightInput) {
+                    rightInput.id = `pair-right-${i}`;
+                }
+                row.dataset.pairIndex = i;
+
+                if (deleteBtn) {
+                    deleteBtn.onclick = () => window.removePair(i);
+                }
+            });
+        }
+
+        function getPairsData() {
+            const pairs = [];
+            const rows = document.querySelectorAll("#pairs-list .pair-row");
+
+            rows.forEach(row => {
+                const leftInput = row.querySelector(".pair-input:first-child");
+                const rightInput = row.querySelector(".pair-input:nth-child(2)");
+
+                const leftValue = leftInput ? leftInput.value.trim() : "";
+                const rightValue = rightInput ? rightInput.value.trim() : "";
+
+                if (leftValue && rightValue) {
+                    pairs.push({
+                        id: Date.now() + Math.random(),
+                        left: leftValue,
+                        right: rightValue
+                    });
+                }
+            });
+
+            return pairs;
+        }
+
+        function loadPairsData(pairs) {
+            const container = document.getElementById("pairs-list");
+            container.innerHTML = ""; // Clear existing pairs
+
+            pairs.forEach((pair, index) => {
+                const pairDiv = document.createElement("div");
+                pairDiv.className = "pair-row";
+                pairDiv.dataset.pairIndex = index;
+                pairDiv.innerHTML = `
+                    <input type="text" class="pair-input" id="pair-left-${index}" value="${escapeHTML(pair.left)}" placeholder="Element lewy (np. kraj)" oninput="window.updateLivePreview()">
+                    <input type="text" class="pair-input" id="pair-right-${index}" value="${escapeHTML(pair.right)}" placeholder="Element prawy (np. flaga)" oninput="window.updateLivePreview()">
+                    <div class="pair-actions">
+                        <button type="button" onclick="window.removePair(${index})" title="Usuń parę">🗑️</button>
+                    </div>
+                `;
+                container.appendChild(pairDiv);
+            });
+        }
+
         // ========== PYTANIA ==========
         function showAddQuestionForm() {
             document.getElementById("add-question-form").classList.remove("hidden");
@@ -9601,7 +9874,7 @@
                 return;
             }
 
-            let options, correct, orderingSteps;
+            let options, correct, orderingSteps, pairs;
 
             // Pobierz odpowiednie dane w zależności od typu
             if (type === "ordering") {
@@ -9614,6 +9887,16 @@
                 // Dla ordering używamy kroki jako options, correct to [1,2,3...] (kolejność)
                 options = [...orderingSteps];
                 correct = orderingSteps.map((_, i) => i + 1);
+            } else if (type === "pairing") {
+                // Dla pairing - pobierz pary
+                pairs = getPairsData();
+                if (pairs.length < 2) {
+                    showToast("Musisz podać co najmniej 2 pary!", "error");
+                    return;
+                }
+                // Dla pairing używamy pary jako specjalny atrybut
+                options = null; // options nie są używane dla pairing
+                correct = null; // correct nie jest używane dla pairing
             } else {
                 // Dla single/multiple - pobierz odpowiedzi
                 const optionsData = getOptionsData();
@@ -9637,31 +9920,45 @@
             if (editingQuestionId) {
                 const index = questions.findIndex(q => q.id === editingQuestionId);
                 if (index !== -1) {
-                    questions[index] = {
+                    const questionData = {
                         id: editingQuestionId,
                         text,
                         type,
-                        options,
-                        correct,
                         category: category,
                         tags: tags,
                         explanation: explanationHTML,
                         imageData: currentImageData || questions[index].imageData  // Zachowaj stary jeśli nie nowy
                     };
+
+                    if (type === "pairing") {
+                        questionData.pairs = pairs;
+                    } else {
+                        questionData.options = options;
+                        questionData.correct = correct;
+                    }
+
+                    questions[index] = questionData;
                     showToast("Pytanie zaktualizowane!", "success");
                 }
             } else {
-                questions.push({
+                const questionData = {
                     id: Date.now() + Math.random(),
                     text,
                     type,
-                    options,
-                    correct,
                     category: category,
                     tags: tags,
                     explanation: explanationHTML,
                     imageData: currentImageData  // Dodaj obraz jeśli jest
-                });
+                };
+
+                if (type === "pairing") {
+                    questionData.pairs = pairs;
+                } else {
+                    questionData.options = options;
+                    questionData.correct = correct;
+                }
+
+                questions.push(questionData);
                 showToast("Pytanie dodane!", "success");
             }
 
@@ -9723,6 +10020,15 @@
                             <ol style="margin: 10px 0 0 20px;">
                                 ${(q.options || []).map(opt => `<li>${escapeHTML(opt)}</li>`).join('')}
                             </ol>
+                        </div>
+                    `;
+                } else if (q.type === "pairing") {
+                    optionsHTML = `
+                        <div class="ordering-correct-sequence">
+                            <strong>Prawidłowe pary:</strong>
+                            <ul style="margin: 10px 0 0 20px;">
+                                ${(q.pairs || []).map(pair => `<li><strong>${escapeHTML(pair.left)}</strong> ↔ ${escapeHTML(pair.right)}</li>`).join('')}
+                            </ul>
                         </div>
                     `;
                 } else {
@@ -9880,9 +10186,11 @@
             // Załaduj treść pytania do WYSIWYG
             setWYSIWYGContent('questionEditor', question.text || '');
 
-            // Załaduj odpowiedzi lub kroki ordering
+            // Załaduj odpowiedzi lub kroki ordering lub pairing
             if (question.type === "ordering") {
                 loadOrderingStepsData(question.options || []);
+            } else if (question.type === "pairing") {
+                loadPairsData(question.pairs || []);
             } else {
                 loadOptionsData(question.options || [], question.correct || []);
             }
@@ -10828,6 +11136,8 @@
             // Dla ordering - generuj specjalny interfejs
             if (q.type === "ordering") {
                 renderOrderingQuestion(q, optionsToRender);
+            } else if (q.type === "pairing") {
+                renderPairingQuestion(q);
             } else {
                 document.getElementById("test-question-container").innerHTML = `
                     <div class="test-question">
@@ -10842,7 +11152,7 @@
                 `;
             }
 
-            if (userAnswers[currentQuestionIndex] && q.type !== "ordering") {
+            if (userAnswers[currentQuestionIndex] && q.type !== "ordering" && q.type !== "pairing") {
                 userAnswers[currentQuestionIndex].forEach(idx => {
                     document.querySelectorAll(".test-option")[idx].classList.add("selected");
                 });
@@ -10893,6 +11203,77 @@
             }
             // Zapisz po shuffled index (0-based)
             userAnswers[currentQuestionIndex][shuffledIndex] = position === '' ? null : parseInt(position);
+        };
+
+        function renderPairingQuestion(q) {
+            const currentAnswer = userAnswers[currentQuestionIndex] || {};
+            const pairs = q.pairs || [];
+
+            // Przygotuj listę wszystkich prawych elementów do dropdowna
+            const rightItems = pairs.map((pair, i) => ({
+                id: pair.id,
+                value: pair.right
+            }));
+
+            // Losuj kolejność prawych elementów
+            if (!q._shuffledRightItems) {
+                const indices = rightItems.map((_, i) => i);
+                for (let i = indices.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [indices[i], indices[j]] = [indices[j], indices[i]];
+                }
+                q._shuffledRightItems = indices.map(i => rightItems[i]);
+            }
+
+            // Losuj kolejność lewych elementów
+            if (!q._shuffledLeftItems) {
+                const leftItems = pairs.map((pair, i) => ({
+                    id: pair.id,
+                    value: pair.left
+                }));
+                const indices = leftItems.map((_, i) => i);
+                for (let i = indices.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [indices[i], indices[j]] = [indices[j], indices[i]];
+                }
+                q._shuffledLeftItems = indices.map(i => leftItems[i]);
+            }
+
+            const html = `
+                <div class="test-question">
+                    ${(q.imageData && q.imageData.startsWith('data:')) ? `<img src="${q.imageData}" loading="lazy" style="max-width: 100%; max-height: 400px; margin: 0 auto 20px auto; border-radius: 8px; border: 2px solid #ddd; display: block;" alt="Obraz do pytania">` : ''}
+                    <div class="question-text">${sanitizeHTML(q.text)}</div>
+                    <div class="pairing-test-item">
+                        <p class="pairing-instruction">Dopasuj elementy:</p>
+                        ${q._shuffledLeftItems.map((leftItem, i) => {
+                            const selectedId = currentAnswer[leftItem.id] || '';
+
+                            return `
+                                <div class="pairing-row">
+                                    <span class="pairing-left">${escapeHTML(leftItem.value)}</span>
+                                    <select class="pairing-select" onchange="window.selectPairingOption('${leftItem.id}', this.value)">
+                                        <option value="">-- wybierz --</option>
+                                        ${q._shuffledRightItems.map(rightItem => `
+                                            <option value="${rightItem.id}" ${selectedId === rightItem.id ? 'selected' : ''}>
+                                                ${escapeHTML(rightItem.value)}
+                                            </option>
+                                        `).join('')}
+                                    </select>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById("test-question-container").innerHTML = html;
+        }
+
+        window.selectPairingOption = function (leftItemId, rightItemId) {
+            if (!userAnswers[currentQuestionIndex]) {
+                userAnswers[currentQuestionIndex] = {};
+            }
+            userAnswers[currentQuestionIndex][leftItemId] = rightItemId || null;
         };
 
         function selectOption(idx, type) {
@@ -10987,6 +11368,29 @@
 
                     isCorrect = allCorrect && hasAnswer;
                     isSkipped = !hasAnswer;
+                } else if (q.type === "pairing") {
+                    // Dla pairing - sprawdz czy pary są poprawnie dopasowane
+                    // ans jest obiektem {leftItemId: rightItemId}
+                    // pairs to [{id, left, right}, ...]
+
+                    const pairs = q.pairs || [];
+                    let correctPairs = 0;
+                    let hasAnswer = false;
+
+                    pairs.forEach(pair => {
+                        const selectedRightItemId = ans[pair.id];
+                        if (selectedRightItemId) {
+                            hasAnswer = true;
+                            // Znajdź prawą parę po ID
+                            const correctPair = pairs.find(p => p.id == selectedRightItemId);
+                            if (correctPair && correctPair.id === pair.id) {
+                                correctPairs++;
+                            }
+                        }
+                    });
+
+                    isCorrect = correctPairs === pairs.length && hasAnswer;
+                    isSkipped = !hasAnswer;
                 } else {
                     // Dla single/multiple
                     const sortedAns = [...ans].sort((a, b) => a - b);
@@ -11063,6 +11467,21 @@
             const validQuestions = filteredQuestions.filter(q => {
                 // Podstawowe pola wymagane
                 if (!q || !q.text || !q.type) return false;
+
+                // Dla pairing - sprawdź pary
+                if (q.type === "pairing") {
+                    if (!q.pairs || !Array.isArray(q.pairs) || q.pairs.length === 0) return false;
+                    if (q.pairs.length < 2) return false;
+                    // Sprawdź czy pary mają oba pola wypełnione
+                    const hasValidPairs = q.pairs.every(pair => 
+                        pair && pair.left && pair.left.trim() !== "" && 
+                        pair.right && pair.right.trim() !== ""
+                    );
+                    if (!hasValidPairs) return false;
+                    return true;
+                }
+
+                // Dla innych typów - sprawdź options i correct
                 if (!q.options || !Array.isArray(q.options) || q.options.length === 0) return false;
                 if (!q.correct) return false;
 
@@ -11211,6 +11630,11 @@
                 practiceSelectedAnswers = {};
             }
 
+            // Dla pairing - reset do obiektu
+            if (q.type === "pairing") {
+                practiceSelectedAnswers = {};
+            }
+
             document.getElementById("practiceCurrentNumber").textContent = practiceQuestionIndex + 1;
             document.getElementById("practiceCorrect").textContent = practiceCorrect;
             document.getElementById("practiceIncorrect").textContent = practiceIncorrect;
@@ -11232,9 +11656,11 @@
             // Użyj pomieszanych opcji lub oryginalnych
             const optionsToRender = q._shuffledOptions || q.options || [];
 
-            // Dla ordering - użyj specjalnego renderera
+            // Dla ordering - użyj specjalnego rendera
             if (q.type === "ordering") {
                 renderPracticeOrderingQuestion(q, optionsToRender, bookmarkButton);
+            } else if (q.type === "pairing") {
+                renderPracticePairingQuestion(q, bookmarkButton);
             } else {
                 document.getElementById("practice-question-container").innerHTML = `
                     ${bookmarkButton}
@@ -11296,6 +11722,79 @@
             }
             // Zapisz po shuffled index (0-based)
             practiceSelectedAnswers[shuffledIndex] = position === '' ? null : parseInt(position);
+        };
+
+        function renderPracticePairingQuestion(q, bookmarkButton) {
+            const currentAnswer = practiceSelectedAnswers || {};
+            const pairs = q.pairs || [];
+
+            // Przygotuj listę wszystkich prawych elementów do dropdowna
+            const rightItems = pairs.map((pair, i) => ({
+                id: pair.id,
+                value: pair.right
+            }));
+
+            // Losuj kolejność prawych elementów
+            if (!q._shuffledRightItems) {
+                const indices = rightItems.map((_, i) => i);
+                for (let i = indices.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [indices[i], indices[j]] = [indices[j], indices[i]];
+                }
+                q._shuffledRightItems = indices.map(i => rightItems[i]);
+            }
+
+            // Losuj kolejność lewych elementów
+            if (!q._shuffledLeftItems) {
+                const leftItems = pairs.map((pair, i) => ({
+                    id: pair.id,
+                    value: pair.left
+                }));
+                const indices = leftItems.map((_, i) => i);
+                for (let i = indices.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [indices[i], indices[j]] = [indices[j], indices[i]];
+                }
+                q._shuffledLeftItems = indices.map(i => leftItems[i]);
+            }
+
+            const html = `
+                ${bookmarkButton}
+                <div class="test-question">
+                    ${(q.imageData && q.imageData.startsWith('data:')) ? `<img src="${q.imageData}" loading="lazy" style="max-width: 100%; max-height: 400px; margin: 0 auto 20px auto; border-radius: 8px; border: 2px solid #ddd; display: block;" alt="Obraz do pytania">` : ''}
+                    <div class="question-text">${sanitizeHTML(q.question || q.text || "")}</div>
+                    <div class="pairing-test-item">
+                        <p class="pairing-instruction">Dopasuj elementy:</p>
+                        ${q._shuffledLeftItems.map((leftItem, i) => {
+                            const selectedId = currentAnswer[leftItem.id] || '';
+
+                            return `
+                                <div class="pairing-row">
+                                    <span class="pairing-left">${escapeHTML(leftItem.value)}</span>
+                                    <select class="pairing-select" onchange="window.selectPracticePairingOption('${leftItem.id}', this.value)">
+                                        <option value="">-- wybierz --</option>
+                                        ${q._shuffledRightItems.map(rightItem => `
+                                            <option value="${rightItem.id}" ${selectedId === rightItem.id ? 'selected' : ''}>
+                                                ${escapeHTML(rightItem.value)}
+                                            </option>
+                                        `).join('')}
+                                    </select>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById("practice-question-container").innerHTML = html;
+        }
+
+        window.selectPracticePairingOption = function (leftItemId, rightItemId) {
+            if (practiceAnswered) return;
+            if (!practiceSelectedAnswers || typeof practiceSelectedAnswers !== 'object') {
+                practiceSelectedAnswers = {};
+            }
+            practiceSelectedAnswers[leftItemId] = rightItemId || null;
         };
 
         function togglePracticeOption(idx) {
@@ -11360,6 +11859,12 @@
             // Dla ordering - inna walidacja
             if (q.type === "ordering") {
                 checkPracticeOrderingAnswer(q);
+                return;
+            }
+
+            // Dla pairing - inna walidacja
+            if (q.type === "pairing") {
+                checkPracticePairingAnswer(q);
                 return;
             }
 
@@ -11541,6 +12046,74 @@
                 if (q.explanation && q.explanation.trim()) {
                     feedbackHTML += `<div class="explanation-box"><strong>💡 Wyjaśnienie:</strong><br>${makeLinksClickable(q.explanation)}</div>`;
                 }
+                document.getElementById("practice-feedback").innerHTML = feedbackHTML;
+            }
+
+            document.getElementById("practiceCorrect").textContent = practiceCorrect;
+            document.getElementById("practiceIncorrect").textContent = practiceIncorrect;
+        }
+
+        function checkPracticePairingAnswer(q) {
+            const ans = practiceSelectedAnswers || {};
+            const pairs = q.pairs || [];
+
+            // Sprawdź czy wszystkie pary są poprawnie dopasowane
+            let correctPairs = 0;
+            let hasAnswer = false;
+
+            pairs.forEach(pair => {
+                const selectedRightItemId = ans[pair.id];
+                if (selectedRightItemId) {
+                    hasAnswer = true;
+                    // Znajdź prawą parę po ID
+                    const correctPair = pairs.find(p => p.id == selectedRightItemId);
+                    if (correctPair && correctPair.id === pair.id) {
+                        correctPairs++;
+                    }
+                }
+            });
+
+            if (!hasAnswer) {
+                alert("Wybierz dopasowanie dla wszystkich elementów!");
+                return;
+            }
+
+            practiceAnswered = true;
+            const isCorrect = correctPairs === pairs.length;
+
+            // Użyj oryginalnych par do wyświetlania poprawnego dopasowania
+            if (isCorrect) {
+                practiceCorrect++;
+                let feedbackHTML = `<div class="feedback-box feedback-correct">✅ Poprawne dopasowanie!</div>`;
+                feedbackHTML += `<div class="feedback-box feedback-info"><strong>Poprawne pary:</strong><ul>`;
+                pairs.forEach(pair => {
+                    feedbackHTML += `<li><strong>${escapeHTML(pair.left)}</strong> ↔ ${escapeHTML(pair.right)}</li>`;
+                });
+                feedbackHTML += `</ul></div>`;
+
+                feedbackHTML += `<button class="btn-primary" onclick="window.nextPracticeQuestion()" style="margin-top: 10px;">➡️ Następne pytanie</button>`;
+
+                if (q.explanation && q.explanation.trim()) {
+                    feedbackHTML += `<div class="explanation-box"><strong>💡 Wyjaśnienie:</strong><br>${makeLinksClickable(q.explanation)}</div>`;
+                }
+
+                document.getElementById("practice-feedback").innerHTML = feedbackHTML;
+            } else {
+                practiceIncorrect++;
+                let feedbackHTML = `<div class="feedback-box feedback-incorrect">❌ Niestety, niektóre dopasowania są niepoprawne.</div>`;
+                feedbackHTML += `<div class="feedback-box feedback-info">Poprawne: ${correctPairs}/${pairs.length} par</div>`;
+                feedbackHTML += `<div class="feedback-box feedback-info"><strong>Poprawne pary:</strong><ul>`;
+                pairs.forEach(pair => {
+                    feedbackHTML += `<li><strong>${escapeHTML(pair.left)}</strong> ↔ ${escapeHTML(pair.right)}</li>`;
+                });
+                feedbackHTML += `</ul></div>`;
+
+                feedbackHTML += `<button class="btn-primary" onclick="window.nextPracticeQuestion()" style="margin-top: 10px;">➡️ Następne pytanie</button>`;
+
+                if (q.explanation && q.explanation.trim()) {
+                    feedbackHTML += `<div class="explanation-box"><strong>💡 Wyjaśnienie:</strong><br>${makeLinksClickable(q.explanation)}</div>`;
+                }
+
                 document.getElementById("practice-feedback").innerHTML = feedbackHTML;
             }
 
@@ -12891,7 +13464,11 @@
         window.handleCorrectSelection = handleCorrectSelection;
         window.updateLivePreview = updateLivePreview;
 
-        // Funkcje administratora
+        // Pairing functions exports
+        window.addPair = addPair;
+        window.removePair = removePair;
+
+        // Administrator functions
         window.blockUser = blockUser;
         window.unblockUser = unblockUser;
         window.grantEditPermission = grantEditPermission;
