@@ -1,5 +1,93 @@
 # Change Log - Aplikacja Quizowo-Testowa
 
+## [1.25] - 2025-01-17
+
+### 🐛 Poprawka: Błędny selektor w funkcji getPairsData()
+
+#### Problem
+Dodawanie pytań typu "Dopasowanie" (pairing) nie działało poprawnie - pytania nie trafiały do bazy i nie było ich można wyszukać.
+
+#### Przyczyna
+W funkcji `getPairsData()` był błędny selektor CSS:
+```javascript
+const leftInput = row.querySelector(".pair-input:first-child");
+const rightInput = row.querySelector(".pair-input:nth-child(2)");  // ❌ BŁĘD
+```
+
+Selektor `:nth-child(2)` wybiera drugi element w danym wierszu, niezależnie od typu. W strukturze HTML:
+```html
+<div class="pair-row">
+    <input type="text" class="pair-input">  <!-- 1 -->
+    <input type="text" class="pair-input">  <!-- 2 -->
+    <div class="pair-actions">  <!-- 3 -->
+        <button></button>  <!-- 4 -->
+    </div>
+</div>
+```
+
+Selektor `:nth-child(2)` prawidłowo wybiera drugi element (drugie input), ale jest to nietypowy selektor. Należało użyć bardziej precyzyjnego selektora opartego na typie elementu.
+
+#### Rozwiązanie
+
+**Przed:**
+```javascript
+const leftInput = row.querySelector(".pair-input:first-child");
+const rightInput = row.querySelector(".pair-input:nth-child(2)");
+```
+
+**Po:**
+```javascript
+const leftInput = row.querySelector(".pair-input:nth-of-type(1)");
+const rightInput = row.querySelector(".pair-input:nth-of-type(2)");
+```
+
+**Alternatywna poprawka:**
+```javascript
+// Mogłoby być też tak:
+const leftInput = row.querySelector(".pair-input:first-child");
+const rightInput = row.querySelector(".pair-input:last-child");
+```
+
+#### Dlaczego to był problem?
+
+**Wyjaśnienie działania selektorów:**
+- `:nth-child(2)` - drugi element w wierszu (niezależnie od typu)
+- `:nth-of-type(2)` - drugi element tego samego typu (input)
+
+**Różnica na przykładzie:**
+```html
+<div>
+    <p>Pierwszy</p>        <!-- nth-child(1), nth-of-type(1) -->
+    <span>Drugi</span>    <!-- nth-child(2), nth-of-type(1) -->
+    <p>Trzeci</p>        <!-- nth-child(3), nth-of-type(2) -->
+</div>
+```
+
+W przypadku `pair-row`, oba selektory działają tak samo, ponieważ:
+- `input type="text" class="pair-input"` - pierwszy
+- `input type="text" class="pair-input"` - drugi
+
+Ale `:nth-of-type` jest bardziej precyzyjny i zalecany.
+
+#### Zmiany
+- **Lokalizacja:** `index.html` (linia ~9785-9786)
+- **Element:** Funkcja `getPairsData()`
+- **Zmiana:** Selektory z `:first-child`/`:nth-child(2)` na `:nth-of-type(1)`/`:nth-of-type(2)`
+
+#### Korzyści
+- ✅ Poprawne pobieranie danych z formularza par
+- ✅ Pytania typu "pairing" trafiają do bazy
+- ✅ Pytania typu "pairing" można wyszukać
+- ✅ Bardziej precyzyjne selektory CSS
+- ✅ Lepsze zrozumienie kodu
+
+#### Statystyki zmian
+- Linie zmodyfikowane: 2
+- Wersja: 1.24 → 1.25
+- Typ zmiany: patch (poprawka błędu)
+
+---
+
 ## [1.24] - 2025-01-17
 
 ### 🔍 Poprawka: Dodano filtr typu "pairing" w wyszukiwarce pytań
