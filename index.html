@@ -1,5 +1,5 @@
 <!DOCTYPE html>
- <!-- Quiz Application v1.26 -->
+ <!-- Quiz Application v1.27 -->
 <!-- Latest updates: Rebuilt flashcard system, improved layout, compact progress panel -->
 <html lang="pl">
 
@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📝 Quiz Application v1.26</title>
+    <title>📝 Quiz Application v1.27</title>
 
     <!-- ========== PWA META TAGS ========== -->
     <link rel="manifest" href="./manifest.json">
@@ -3464,6 +3464,31 @@
             color: #6e7681;
         }
 
+        /* Pairing dark mode styles */
+        body.dark-mode .pairing-test-item {
+            background: #161b22;
+            border-color: #30363d;
+        }
+
+        body.dark-mode .pairing-row {
+            background: #21262d;
+            border-color: #30363d;
+        }
+
+        body.dark-mode .pairing-left {
+            color: #e6edf3;
+        }
+
+        body.dark-mode .pairing-select {
+            background: #0d1117;
+            border-color: #30363d;
+            color: #c9d1d9;
+        }
+
+        body.dark-mode .pairing-instruction {
+            color: #c9d1d9;
+        }
+
         /* Ordering instruction text */
         body.dark-mode .ordering-instruction {
             color: #c9d1d9;
@@ -4320,6 +4345,31 @@
 
         [data-theme="modern"] .ordering-correct-sequence strong {
             color: #ffffff;
+        }
+
+        /* Pairing questions - modern theme */
+        [data-theme="modern"] .pairing-test-item {
+            background: #1e1b4b;
+            border-color: rgba(255, 0, 255, 0.3);
+        }
+
+        [data-theme="modern"] .pairing-row {
+            background: #2d285a;
+            border-color: rgba(255, 0, 255, 0.2);
+        }
+
+        [data-theme="modern"] .pairing-left {
+            color: #e2e8f0;
+        }
+
+        [data-theme="modern"] .pairing-select {
+            background: #1e1b4b;
+            border-color: rgba(255, 0, 255, 0.4);
+            color: #ffffff;
+        }
+
+        [data-theme="modern"] .pairing-instruction {
+            color: #e2e8f0;
         }
 
         /* Preview placeholder - modern theme */
@@ -6015,7 +6065,7 @@
     <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="window.closeMobileNav()"></div>
 
     <div class="container">
-        <h1>📝 QuizApp <small style="font-size: 0.5em; color: #666;">v1.26</small></h1>
+        <h1>📝 QuizApp <small style="font-size: 0.5em; color: #666;">v1.27</small></h1>
 
         <div id="auth-section">
             <div class="question-item">
@@ -8263,19 +8313,56 @@
             let optionsBackHTML = '';
 
             if (q.type === "pairing") {
-                // Dla pairing - pokaż left items na przód
+                // Dla pairing - przygotuj listę prawych elementów do dropdowna
                 const pairs = q.pairs || [];
-                optionsFrontHTML = pairs.map((pair, i) => `
+                const rightItems = pairs.map((pair, i) => ({
+                    id: pair.id,
+                    value: pair.right
+                }));
+
+                // Losuj kolejność prawych elementów
+                if (!q._shuffledRightItems) {
+                    const indices = rightItems.map((_, i) => i);
+                    for (let i = indices.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [indices[i], indices[j]] = [indices[j], indices[i]];
+                    }
+                    q._shuffledRightItems = indices.map(i => rightItems[i]);
+                }
+
+                // Losuj kolejność lewych elementów
+                if (!q._shuffledLeftItems) {
+                    const leftItems = pairs.map((pair, i) => ({
+                        id: pair.id,
+                        value: pair.left
+                    }));
+                    const indices = leftItems.map((_, i) => i);
+                    for (let i = indices.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [indices[i], indices[j]] = [indices[j], indices[i]];
+                    }
+                    q._shuffledLeftItems = indices.map(i => leftItems[i]);
+                }
+
+                // Przód karty - lewe elementy + dropdown z prawymi
+                optionsFrontHTML = q._shuffledLeftItems.map((leftItem, i) => `
                     <div class="flashcard-option">
-                        <div class="option-number">${i + 1}</div>
-                        <div>${escapeHTML(pair.left)}</div>
+                        <div style="flex: 1; display: flex; align-items: center; gap: 15px;">
+                            <span><strong>${escapeHTML(leftItem.value)}</strong></span>
+                            <span>↓</span>
+                        </div>
                     </div>
                 `).join("");
-                // Tył karty - pokaż poprawne pary
+                
+                // Tył karty - połączone pary (left ↔ right)
                 optionsBackHTML = pairs.map((pair, i) => `
                     <div class="flashcard-option correct">
                         <div class="option-number">${i + 1}</div>
-                        <div><strong>${escapeHTML(pair.left)}</strong> ↔ ${escapeHTML(pair.right)}</div>
+                        <div style="flex: 1;">
+                            <strong>${escapeHTML(pair.left)}</strong>
+                            <span style="margin: 0 10px;">↔</span>
+                            ${escapeHTML(pair.right)}
+                        </div>
                     </div>
                 `).join("");
             } else {
@@ -11588,21 +11675,33 @@
             // Losowanie kolejności odpowiedzi (jeśli wybrano)
             const randomizeAnswers = document.getElementById("randomizeAnswersPractice").checked;
             practiceQuestions.forEach(q => {
-                // Dla ordering - ZAWSZE losuj kolejność kroków (inaczej pytanie nie ma sensu)
+                // Dla ordering/pairing - ZAWSZE losuj kolejność
                 // Dla single/multiple - losuj tylko jeśli checkbox jest zaznaczony
-                const shouldShuffle = (q.type === "ordering") || (randomizeAnswers && q.options && q.options.length > 1);
+                let shouldShuffle = false;
+                
+                if (q.type === "ordering" || q.type === "pairing") {
+                    // Dla ordering/pairing - ZAWSZE losuj (kolejność kroków/elementów)
+                    shouldShuffle = true;
+                } else {
+                    // Dla single/multiple - losuj tylko jeśli checkbox jest zaznaczony
+                    shouldShuffle = randomizeAnswers && q.options && q.options.length > 1;
+                }
 
                 if (shouldShuffle) {
-                    // Stwórz tablicę indeksów [0, 1, 2, ...]
-                    const indices = q.options.map((_, i) => i);
-                    // Pomieszaj indeksy (Fisher-Yates shuffle)
-                    for (let i = indices.length - 1; i > 0; i--) {
-                        const j = Math.floor(Math.random() * (i + 1));
-                        [indices[i], indices[j]] = [indices[j], indices[i]];
+                    // Dla ordering/pairing - nie używamy shuffling dla options (robimy to w renderze)
+                    // Dla single/multiple - shuffling jak dotychczas
+                    if (q.type !== "ordering" && q.type !== "pairing") {
+                        // Stwórz tablicę indeksów [0, 1, 2, ...]
+                        const indices = q.options.map((_, i) => i);
+                        // Pomieszaj indeksy (Fisher-Yates shuffle)
+                        for (let i = indices.length - 1; i > 0; i--) {
+                            const j = Math.floor(Math.random() * (i + 1));
+                            [indices[i], indices[j]] = [indices[j], indices[i]];
+                        }
+                        // Zapisz pomieszane opcje i mapowanie
+                        q._shuffledOptions = indices.map(i => q.options[i]);
+                        q._shuffledToOriginal = indices; // shuffled[i] = original[indices[i]]
                     }
-                    // Zapisz pomieszane opcje i mapowanie
-                    q._shuffledOptions = indices.map(i => q.options[i]);
-                    q._shuffledToOriginal = indices; // shuffled[i] = original[indices[i]]
                 }
             });
 
@@ -11630,11 +11729,46 @@
             const q = practiceQuestions[practiceQuestionIndex];
 
             // Walidacja pytania
-            if (!q || !q.text || !q.options) {
+            if (!q || !q.text || !q.type) {
                 console.error("Nieprawidłowe dane pytania:", q);
                 showToast("Błąd danych pytania. Przechodzę do następnego.", "error");
                 nextPracticeQuestion();
                 return;
+            }
+
+            // Dla pairing - waliduj pary
+            if (q.type === "pairing") {
+                if (!q.pairs || !Array.isArray(q.pairs) || q.pairs.length === 0) {
+                    console.error("Nieprawidłowe dane pytania (brak par):", q);
+                    showToast("Błąd danych pytania. Przechodzę do następnego.", "error");
+                    nextPracticeQuestion();
+                    return;
+                }
+                if (q.pairs.length < 2) {
+                    console.error("Za mało par w pytaniu:", q);
+                    showToast("Błąd danych pytania. Przechodzę do następnego.", "error");
+                    nextPracticeQuestion();
+                    return;
+                }
+                // Sprawdź czy pary mają oba pola wypełnione
+                const hasValidPairs = q.pairs.every(pair =>
+                    pair && pair.left && pair.left.trim() !== "" &&
+                    pair.right && pair.right.trim() !== ""
+                );
+                if (!hasValidPairs) {
+                    console.error("Pary nie są wypełnione:", q);
+                    showToast("Błąd danych pytania. Przechodzę do następnego.", "error");
+                    nextPracticeQuestion();
+                    return;
+                }
+            } else {
+                // Dla innych typów - sprawdź options
+                if (!q.options || !Array.isArray(q.options) || q.options.length === 0) {
+                    console.error("Nieprawidłowe dane pytania (brak options):", q);
+                    showToast("Błąd danych pytania. Przechodzę do następnego.", "error");
+                    nextPracticeQuestion();
+                    return;
+                }
             }
 
             practiceAnswered = false;

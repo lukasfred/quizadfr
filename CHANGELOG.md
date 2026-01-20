@@ -1,5 +1,239 @@
 # Change Log - Aplikacja Quizowo-Testowa
 
+## [1.27] - 2025-01-17
+
+### 🐛 Poprawki: Walidacja w trybie nauki, UI fiszek i kolorystyka w trybie testu
+
+#### Problem 1: Błąd "Błąd danych pytania" w trybie nauki dla pytań pairing
+W trybie nauki wyskakiwał błąd "Błąd danych pytania" gdy napotkało pytanie typu "pairing".
+
+#### Przyczyna 1
+Walidacja w `renderPracticeQuestion()` sprawdzała:
+```javascript
+if (!q || !q.text || !q.options) {  // ❌ Problem
+```
+
+Dla pytań pairing ustawiano `options = null`, więc walidacja nie przechodziła.
+
+#### Rozwiązanie 1
+Zaktualizowano walidację w `renderPracticeQuestion()` (linia ~11631):
+```javascript
+// Walidacja pytania
+if (!q || !q.text || !q.type) {
+    console.error("Nieprawidłowe dane pytania:", q);
+    showToast("Błąd danych pytania. Przechodzę do następnego.", "error");
+    nextPracticeQuestion();
+    return;
+}
+
+// Dla pairing - waliduj pary
+if (q.type === "pairing") {
+    if (!q.pairs || !Array.isArray(q.pairs) || q.pairs.length === 0) return false;
+    if (q.pairs.length < 2) return false;
+    // Sprawdź czy pary mają oba pola wypełnione
+    const hasValidPairs = q.pairs.every(pair => 
+        pair && pair.left && pair.left.trim() !== "" && 
+        pair.right && pair.right.trim() !== ""
+    );
+    if (!hasValidPairs) return false;
+} else {
+    // Dla innych typów - sprawdź options
+    if (!q.options || !Array.isArray(q.options) || q.options.length === 0) return false;
+}
+```
+
+#### Problem 2: Fiszki - na przód karty nie widać możliwych odpowiedzi
+Na pierwszej stronie karty fiszki nie były widoczne żadne opcje odpowiedzi.
+
+#### Przyczyna 2
+Kod pokazywał tylko lewe elementy (np. kraje) bez żadnych prawych elementów (np. flagi) lub dropdownu z wyborem.
+
+#### Rozwiązanie 2
+Zaktualizowano `showFlashcard()` dla pytań pairing:
+- **Przód karty**: Lewe elementy (np. kraje) + strzałka w dół wskazująca na dropdown
+- **Tył karty**: Połączone pary z wyraźnym oddzieleniem (np. "Anglia" ↔ "🏴󠁧󠁢󠁥󠁮󠁧󠁿")
+
+```javascript
+if (q.type === "pairing") {
+    // Przygotuj listę prawych elementów
+    const rightItems = pairs.map((pair, i) => ({
+        id: pair.id,
+        value: pair.right
+    }));
+
+    // Losuj kolejność prawych elementów
+    if (!q._shuffledRightItems) {
+        // ... shuffling ...
+    }
+
+    // Losuj kolejność lewych elementów
+    if (!q._shuffledLeftItems) {
+        // ... shuffling ...
+    }
+
+    // Przód karty - lewe elementy + strzałka w dół
+    optionsFrontHTML = q._shuffledLeftItems.map((leftItem, i) => `
+        <div class="flashcard-option">
+            <div style="flex: 1; display: flex; align-items: center; gap: 15px;">
+                <span><strong>${escapeHTML(leftItem.value)}</strong></span>
+                <span>↓</span>
+            </div>
+        </div>
+    `).join("");
+    
+    // Tył karty - połączone pary
+    optionsBackHTML = pairs.map((pair, i) => `
+        <div class="flashcard-option correct">
+            <div class="option-number">${i + 1}</div>
+            <div style="flex: 1;">
+                <strong>${escapeHTML(pair.left)}</strong>
+                <span style="margin: 0 10px;">↔</span>
+                ${escapeHTML(pair.right)}
+            </div>
+        </div>
+    `).join("");
+}
+```
+
+#### Problem 3: Shuffling pytań pairing w trybie nauki powodował błędy
+Shuffling w `startPractice()` używało `q.options.map()` co powodowało błędy dla pytań pairing z `options = null`.
+
+#### Przyczyna 3
+```javascript
+// PIERWOTNIE (w startPractice):
+const indices = q.options.map((_, i) => i);  // ❌ Błąd dla pairing!
+```
+
+Dla pytań pairing `options = null`, więc shuffling kończyło się błędem.
+
+#### Rozwiązanie 3
+Zaktualizowano logikę shuffling w `startPractice()` (linia ~11545):
+```javascript
+// Dla ordering/pairing - ZAWSZE losuj kolejność
+if (q.type === "ordering" || q.type === "pairing") {
+    shouldShuffle = true;
+} else {
+    // Dla single/multiple - losuj tylko jeśli checkbox jest zaznaczony
+    shouldShuffle = randomizeAnswers && q.options && q.options.length > 1;
+}
+
+if (shouldShuffle) {
+    // Dla ordering/pairing - nie używamy shuffling dla options
+    // (robimy to w renderze: renderPairingQuestion/renderOrderingQuestion)
+    if (q.type !== "ordering" && q.type !== "pairing") {
+        // Dla single/multiple - shuffling jak dotychczas
+        const indices = q.options.map((_, i) => i);
+        // ... shuffling ...
+    }
+}
+```
+
+#### Problem 4: Kolorystyka w trybie testu - niedopasowanie do motywu
+Styling dla pytań pairing w trybie testu był niedopasowany do wybranego motywu (dark mode, modern theme).
+
+#### Rozwiązanie 4
+Dodano style dla pytań pairing w różnych motywach:
+
+**Dark mode:**
+```css
+body.dark-mode .pairing-test-item {
+    background: #161b22;
+    border-color: #30363d;
+}
+
+body.dark-mode .pairing-row {
+    background: #21262d;
+    border-color: #30363d;
+}
+
+body.dark-mode .pairing-left {
+    color: #e6edf3;
+}
+
+body.dark-mode .pairing-select {
+    background: #0d1117;
+    border-color: #30363d;
+    color: #c9d1d9;
+}
+
+body.dark-mode .pairing-instruction {
+    color: #c9d1d9;
+}
+```
+
+**Modern theme:**
+```css
+[data-theme="modern"] .pairing-test-item {
+    background: #1e1b4b;
+    border-color: rgba(255, 0, 255, 0.3);
+}
+
+[data-theme="modern"] .pairing-row {
+    background: #2d285a;
+    border-color: rgba(255, 0, 255, 0.2);
+}
+
+[data-theme="modern"] .pairing-left {
+    color: #e2e8f0;
+}
+
+[data-theme="modern"] .pairing-select {
+    background: #1e1b4b;
+    border-color: rgba(255, 0, 255, 0.4);
+    color: #ffffff;
+}
+
+[data-theme="modern"] .pairing-instruction {
+    color: #e2e8f0;
+}
+```
+
+#### Zmiany w kodzie
+
+**1. renderPracticeQuestion() [linia ~11631]**
+- Zmieniono walidację z `!q.options` na sprawdzenie typu
+- Dodano szczegółową walidację dla pytań pairing
+- Dodano komunikaty błędów dla różnych problemów
+
+**2. startPractice() [linia ~11545]**
+- Zaktualizowano logikę shuffling
+- Dla ordering/pairing: zawsze shuffle (ale w renderze)
+- Dla single/multiple: shuffle tylko jeśli checkbox jest zaznaczony
+- Dla ordering/pairing: nie wywołuj shuffling na options
+
+**3. showFlashcard() [linia ~8246]**
+- Zmieniono renderowanie przodu karty dla pairing
+- Dodano shuffling lewych i prawych elementów
+- Dodano strzałkę w dół wskazującą na dropdown
+- Zmieniono symbol łączenia z "↔" na bardziej czytelny format
+
+**4. CSS [różne lokalizacje]**
+- Dodano style dla pairing w dark mode (linia ~3471)
+- Dodano style dla pairing w modern theme (linia ~4350)
+
+#### Lokalizacja zmian
+- `index.html:11631-11684` - walidacja w renderPracticeQuestion()
+- `index.html:11545-11575` - shuffling w startPractice()
+- `index.html:8246-8280` - renderowanie w showFlashcard()
+- `index.html:3471-3495` - CSS dla pairing w dark mode
+- `index.html:4350-4380` - CSS dla pairing w modern theme
+
+#### Korzyści
+- ✅ Tryb nauki działa poprawnie dla pytań pairing
+- ✅ Fiszki pokazują prawidłową strukturę (przód + tył)
+- ✅ Strzałka w dół na przód karty jasno wskazuje na odpowiedź
+- ✅ Kolorystyka jest dopasowana do wybranego motywu
+- ✅ Shuffling nie powoduje błędów dla pytań pairing
+- ✅ Poprawne oddzielenie elementów na tył karty
+
+#### Statystyki zmian
+- Linie zmodyfikowane: ~100
+- Nowe linie CSS: ~30
+- Wersja: 1.26 → 1.27
+- Typ zmiany: patch (poprawki błędów i UI)
+
+---
+
 ## [1.26] - 2025-01-17
 
 ### 🐛 Poprawka: isValidQuestion() usuwa pytania typu "pairing"
