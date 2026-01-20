@@ -1,6 +1,62 @@
 # Change Log - Aplikacja Quizowo-Testowa
 
-## [1.28] - 2025-01-17
+## [1.30] - 2025-01-19
+
+### 🐛 Poprawka: exitPractice() wywołuje zły sekcję
+
+#### Problem
+Po zakończeniu ćwiczenia w trybie nauki i kliknięciu "Wróć do menu" następuje przekierowanie do sekcji "Wyniki" zamiast do ustawień trybu nauki (gdzie można wybrać kategorię i rozpocząć nową sesję).
+
+#### Przyczyna
+Funkcja `exitPractice()` wywoływała `showSection("results")`, co pokazywało sekcję wyników zamiast powrotu do ustawień trybu nauki.
+
+**Kod przed:**
+```javascript
+function exitPractice() {
+    document.getElementById("practice-interface").classList.add("hidden");
+    document.getElementById("practice-setup").classList.remove("hidden");
+    showSection("results");  // ❌ Problem - pokazuje wyniki zamiast ustawień
+}
+```
+
+#### Rozwiązanie
+Usunięto wywołanie `showSection("results")` z funkcji `exitPractice()`.
+
+**Kod po:**
+```javascript
+function exitPractice() {
+    document.getElementById("practice-interface").classList.add("hidden");
+    document.getElementById("practice-setup").classList.remove("hidden");
+    // Nie wywołujemy showSection("results") - zostajemy w ustawieniach trybu nauki
+}
+```
+
+#### Działanie poprawione
+- Po kliknięciu "Wróć do menu" użytkownik zamyka interfejs ćwiczenia
+- Użytkownik wraca do ekranu ustawień trybu nauki
+- Może wybrać kategorię, ilość pytań, tryb i inne opcje
+- Może rozpocząć nową sesję ćwiczeń
+- **Nie** jest przenoszony do sekcji wyników
+
+#### Lokalizacja
+- **Plik:** `index.html`
+- **Lini:** ~12386
+- **Funkcja:** `exitPractice()`
+
+#### Korzyści
+- ✅ Poprawny przepływ pracy w trybie nauki
+- ✅ Użytkownik może łatwo rozpocząć nową sesję
+- ✅ Brak niepotrzebnych przekierowań do wyników
+- ✅ Logiczny workflow: nauka → ustawienia → nowa nauka → wyniki
+
+#### Statystyki zmian
+- Linie zmodyfikowane: 1 (usunięta 1 linia)
+- Wersja: 1.29 → 1.30
+- Typ zmiany: patch (poprawka UX)
+
+---
+
+## [1.29] - 2025-01-19
 
 ### 🐛 Poprawka: UI fiszek - przód karty pokazuje obie strony pary
 
