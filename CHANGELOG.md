@@ -244,6 +244,107 @@ Po zastosowaniu poprawki:
 
 ---
 
+### 🐛 Dodatkowa poprawka: Pytania typu "ordering" używają "options" i "correct"
+
+#### Problem
+Pierwsza wersja poprawki błędnie założyła, że pytania typu "ordering" używają pola `ordering`, ale w rzeczywistości (zgodnie z kodem renderującym) używają `options` i `correct`, tak jak pytania "single" i "multiple".
+
+**Kod renderujący ordering (index.html:11315):**
+```javascript
+const steps = q._shuffledOptions || q.options || [];
+```
+
+#### Przyczyna
+- Pytania "ordering" wewnątrz aplikacji są przechowywane z `options` (lista elementów) i `correct` (poprawna kolejność)
+- Pole `ordering` nie istnieje w strukturze danych pytań
+- Import wymagał nieistniejącego pola `ordering`, co powodowało odrzucenie 15 pytań
+
+#### Rozwiązanie
+Zmieniono walidację i tworzenie obiektów tak, aby "ordering" był traktowany tak samo jak "single/multiple":
+
+**Kod przed (błędny):**
+```javascript
+} else if (q.type === 'ordering') {
+    // Dla ordering - waliduj ordering
+    if (!q.ordering || !Array.isArray(q.ordering) || q.ordering.length < 2) {
+        console.warn("Pytanie ordering #" + (index + 1) + " ma nieprawidłowe ordering", q);
+        errors++;
+        return;
+    }
+}
+```
+
+**Kod po:**
+```javascript
+} else {
+    // Dla single/multiple/ordering - waliduj options i correct
+    if (!q.options || !Array.isArray(q.options)) {
+        console.warn("Pytanie #" + (index + 1) + " ma nieprawidłowe options", q);
+        errors++;
+        return;
+    }
+    // ... dalsza walidacja options i correct
+}
+```
+
+**Tworzenie obiektu (kodem po):**
+```javascript
+// Dla pairing - dodaj pairs
+if (q.type === 'pairing') {
+    newQ.pairs = q.pairs || [];
+    newQ.options = [];
+    newQ.correct = [];
+} else {
+    // Dla single/multiple/ordering - dodaj options i correct
+    newQ.options = q.options || [];
+    newQ.correct = q.correct || [];
+}
+```
+
+**Eksport (kodem po):**
+```javascript
+// Dla pairing - eksportuj pairs
+if (q.type === 'pairing') {
+    exported.pairs = q.pairs || [];
+    exported.options = [];
+    exported.correct = [];
+} else {
+    // Dla single/multiple/ordering - eksportuj options i correct
+    exported.options = q.options || [];
+    exported.correct = q.correct || [];
+}
+// USUNIĘTO: nieistniejące pole ordering
+```
+
+#### Zmiany w kodzie
+
+**1. importQuestionsJSON() - walidacja [linia 10967-11003]**
+- Usunięto osobną walidację dla "ordering"
+- Dodano "ordering" do wspólnej walidacji z "single/multiple"
+
+**2. importQuestionsJSON() - tworzenie obiektu [linia 11027-11036]**
+- Usunięto osobne tworzenie dla "ordering"
+- Dodano "ordering" do wspólnego tworzenia z "single/multiple"
+
+**3. exportQuestionsJSON() - eksport [linia 10402-10413]**
+- Usunięto próbę eksportu nieistniejącego pola `ordering`
+- Dodano komentarz że ordering używa options/correct
+
+#### Działanie poprawione
+- ✅ Import JSON akceptuje pytania "ordering" z polami `options` i `correct`
+- ✅ Eksport JSON nie próbuje eksportować nieistniejącego pola `ordering`
+- ✅ Wszystkie 15 pytań ordering są teraz importowane poprawnie
+- ✅ Dane ordering są zachowane i zgodne z formatem aplikacji
+
+#### Lokalizacja
+- **Plik:** `index.html`
+- **Funkcje:** `exportQuestionsJSON()` [10385-10420], `importQuestionsJSON()` [10884-11080]
+
+#### Backup
+- Utworzono backup: `index.html.backup-1.30.2`
+
+---
+
 ## [1.30] - 2025-01-19
 
 ### 🐛 Poprawka: exitPractice() wywołuje zły sekcję

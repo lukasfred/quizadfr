@@ -10405,14 +10405,9 @@
                         exported.options = [];
                         exported.correct = [];
                     } else {
-                        // Dla innych typów - eksportuj options i correct
+                        // Dla single/multiple/ordering - eksportuj options i correct
                         exported.options = q.options || [];
                         exported.correct = q.correct || [];
-                    }
-
-                    // Dla ordering - eksportuj ordering
-                    if (q.type === 'ordering') {
-                        exported.ordering = q.ordering || [];
                     }
 
                     return exported;
@@ -10981,15 +10976,8 @@
                                 errors++;
                                 return;
                             }
-                        } else if (q.type === 'ordering') {
-                            // Dla ordering - waliduj ordering
-                            if (!q.ordering || !Array.isArray(q.ordering) || q.ordering.length < 2) {
-                                console.warn("Pytanie ordering #" + (index + 1) + " ma nieprawidłowe ordering", q);
-                                errors++;
-                                return;
-                            }
                         } else {
-                            // Dla single/multiple - waliduj options i correct
+                            // Dla single/multiple/ordering - waliduj options i correct
                             if (!q.options || !Array.isArray(q.options)) {
                                 console.warn("Pytanie #" + (index + 1) + " ma nieprawidłowe options", q);
                                 errors++;
@@ -11036,13 +11024,8 @@
                             newQ.pairs = q.pairs || [];
                             newQ.options = [];
                             newQ.correct = [];
-                        } else if (q.type === 'ordering') {
-                            // Dla ordering - dodaj ordering
-                            newQ.ordering = q.ordering || [];
-                            newQ.options = [];
-                            newQ.correct = [];
                         } else {
-                            // Dla single/multiple - dodaj options i correct
+                            // Dla single/multiple/ordering - dodaj options i correct
                             newQ.options = q.options || [];
                             newQ.correct = q.correct || [];
                         }
