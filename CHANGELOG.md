@@ -1,5 +1,249 @@
 # Change Log - Aplikacja Quizowo-Testowa
 
+## [1.31] - 2026-01-24
+
+### 🐛 Poprawka: Eksport/Import JSON nie obsługuje pytań typu "pairing" i "ordering"
+
+#### Problem
+Funkcje eksportu i importu JSON nie obsługiwały poprawnie pytań typu "pairing" (dopasowanie) i "ordering" (układanie w kolejności). Powodowało to utratę danych przy eksporcie i błędy przy imporcie.
+
+#### Przyczyna 1: Eksport JSON (index.html:10391-10401)
+Funkcja `exportQuestionsJSON()` eksportowała tylko pola `options` i `correct`, ale nie eksportowała:
+- `pairs` dla pytań typu "pairing"
+- `ordering` dla pytań typu "ordering"
+
+**Kod przed:**
+```javascript
+questions: questionsToExport.map(q => ({
+    id: q.id,
+    type: q.type,
+    text: q.text,
+    options: q.options || [],      // ❌ Eksportuje puste options dla pairing/ordering
+    correct: q.correct || [],      // ❌ Eksportuje puste correct dla pairing/ordering
+    category: q.category || "",
+    tags: q.tags || [],
+    explanation: q.explanation || "",
+    imageData: q.imageData || ""
+}))
+```
+
+**Kod po:**
+```javascript
+questions: questionsToExport.map(q => {
+    const exported = {
+        id: q.id,
+        type: q.type,
+        text: q.text,
+        category: q.category || "",
+        tags: q.tags || [],
+        explanation: q.explanation || "",
+        imageData: q.imageData || ""
+    };
+
+    // Dla pairing - eksportuj pairs
+    if (q.type === 'pairing') {
+        exported.pairs = q.pairs || [];
+        exported.options = [];
+        exported.correct = [];
+    } else {
+        // Dla innych typów - eksportuj options i correct
+        exported.options = q.options || [];
+        exported.correct = q.correct || [];
+    }
+
+    // Dla ordering - eksportuj ordering
+    if (q.type === 'ordering') {
+        exported.ordering = q.ordering || [];
+    }
+
+    return exported;
+})
+```
+
+#### Przyczyna 2: Import JSON - Walidacja (index.html:10943-10959)
+Walidacja w `importQuestionsJSON()` wymagała `options` i `correct` dla wszystkich pytań, co powodowało odrzucanie pytań typu "pairing" i "ordering".
+
+**Kod przed:**
+```javascript
+// Walidacja struktury pojedynczego pytania
+if (!q.text || !q.options || !Array.isArray(q.options) || !q.correct) {
+    console.warn("Nieprawidłowa struktura pytania #" + (index + 1), q);
+    errors++;
+    return;
+}
+
+if (q.options.length < 2) {
+    console.warn("Pytanie #" + (index + 1) + " ma mniej niż 2 odpowiedzi");
+    errors++;
+    return;
+}
+
+if (!Array.isArray(q.correct) || q.correct.length === 0) {
+    console.warn("Pytanie #" + (index + 1) + " nie ma poprawnych odpowiedzi");
+    errors++;
+    return;
+}
+```
+
+**Kod po:**
+```javascript
+// Walidacja struktury pojedynczego pytania
+if (!q.text) {
+    console.warn("Nieprawidłowa struktura pytania #" + (index + 1) + " - brak tekstu", q);
+    errors++;
+    return;
+}
+
+// Dla pairing - waliduj pairs
+if (q.type === 'pairing') {
+    if (!q.pairs || !Array.isArray(q.pairs) || q.pairs.length < 2) {
+        console.warn("Pytanie pairing #" + (index + 1) + " ma nieprawidłowe pairs", q);
+        errors++;
+        return;
+    }
+    // Sprawdź czy każda para ma left i right
+    const hasValidPairs = q.pairs.every(pair =>
+        pair && pair.left && pair.left.trim() !== '' &&
+        pair.right && pair.right.trim() !== ''
+    );
+    if (!hasValidPairs) {
+        console.warn("Pytanie pairing #" + (index + 1) + " ma niekompletne pary", q);
+        errors++;
+        return;
+    }
+} else if (q.type === 'ordering') {
+    // Dla ordering - waliduj ordering
+    if (!q.ordering || !Array.isArray(q.ordering) || q.ordering.length < 2) {
+        console.warn("Pytanie ordering #" + (index + 1) + " ma nieprawidłowe ordering", q);
+        errors++;
+        return;
+    }
+} else {
+    // Dla single/multiple - waliduj options i correct
+    if (!q.options || !Array.isArray(q.options)) {
+        console.warn("Pytanie #" + (index + 1) + " ma nieprawidłowe options", q);
+        errors++;
+        return;
+    }
+
+    if (q.options.length < 2) {
+        console.warn("Pytanie #" + (index + 1) + " ma mniej niż 2 odpowiedzi");
+        errors++;
+        return;
+    }
+
+    if (!q.correct || !Array.isArray(q.correct) || q.correct.length === 0) {
+        console.warn("Pytanie #" + (index + 1) + " nie ma poprawnych odpowiedzi");
+        errors++;
+        return;
+    }
+}
+```
+
+#### Przyczyna 3: Import JSON - Tworzenie obiektu (index.html:10973-10983)
+Funkcja tworząca obiekt pytania nie dodawała pól `pairs` i `ordering`.
+
+**Kod przed:**
+```javascript
+const newQ = {
+    id: q.id || Date.now() + Math.random(),
+    type: q.type || "single",
+    text: q.text,
+    options: q.options,       // ❌ Opcje z JSON (puste dla pairing/ordering)
+    correct: q.correct,       // ❌ Poprawne z JSON (puste dla pairing/ordering)
+    category: q.category || "",
+    tags: q.tags || [],
+    explanation: q.explanation || "",
+    imageData: q.imageData || ""
+};
+```
+
+**Kod po:**
+```javascript
+const newQ = {
+    id: q.id || Date.now() + Math.random(),
+    type: q.type || "single",
+    text: q.text,
+    category: q.category || "",
+    tags: q.tags || [],
+    explanation: q.explanation || "",
+    imageData: q.imageData || ""
+};
+
+// Dla pairing - dodaj pairs
+if (q.type === 'pairing') {
+    newQ.pairs = q.pairs || [];
+    newQ.options = [];
+    newQ.correct = [];
+} else if (q.type === 'ordering') {
+    // Dla ordering - dodaj ordering
+    newQ.ordering = q.ordering || [];
+    newQ.options = [];
+    newQ.correct = [];
+} else {
+    // Dla single/multiple - dodaj options i correct
+    newQ.options = q.options || [];
+    newQ.correct = q.correct || [];
+}
+```
+
+#### Zmiany w kodzie
+
+**1. exportQuestionsJSON() [linia 10385-10420]**
+- Zmieniono mapowanie pytań na użycie warunkowego eksportu
+- Dodano obsługę pola `pairs` dla pytań typu "pairing"
+- Dodano obsługę pola `ordering` dla pytań typu "ordering"
+- Dla pairing/ordering: ustawiamy puste `options` i `correct`
+
+**2. importQuestionsJSON() - walidacja [linia 10958-11010]**
+- Zmieniono walidację na sprawdzanie typu pytania
+- Dla pairing: waliduj `pairs` (minimum 2 pary, każda ma left i right)
+- Dla ordering: waliduj `ordering` (minimum 2 elementy)
+- Dla single/multiple: waliduj `options` i `correct`
+
+**3. importQuestionsJSON() - tworzenie obiektu [linia 11023-11048]**
+- Zmieniono tworzenie obiektu na użycie warunkowego dodawania pól
+- Dla pairing: dodaj `pairs`, puste `options` i `correct`
+- Dla ordering: dodaj `ordering`, puste `options` i `correct`
+- Dla single/multiple: dodaj `options` i `correct`
+
+#### Działanie poprawione
+- ✅ Eksport JSON teraz poprawnie eksportuje pytania typu "pairing" z polem `pairs`
+- ✅ Eksport JSON teraz poprawnie eksportuje pytania typu "ordering" z polem `ordering`
+- ✅ Import JSON poprawnie waliduje pytania "pairing" i "ordering"
+- ✅ Import JSON poprawnie tworzy obiekty pytań "pairing" i "ordering"
+- ✅ Dane nie są tracone przy eksporcie
+- ✅ Import nie odrzuca pytań "pairing" i "ordering"
+
+#### Lokalizacja
+- **Plik:** `index.html`
+- **Funkcje:** `exportQuestionsJSON()` [10369-10430], `importQuestionsJSON()` [10884-11080]
+
+#### Test
+Po zastosowaniu poprawki:
+1. Eksportuj pytania do JSON
+2. Sprawdź czy pytania typu "pairing" mają pole `pairs`
+3. Sprawdź czy pytania typu "ordering" mają pole `ordering`
+4. Importuj JSON - pytania powinny być zaimportowane bez błędów
+
+#### Korzyści
+- ✅ Pełna kompatybilność eksportu/importu dla wszystkich typów pytań
+- ✅ Dane pytań "pairing" i "ordering" są zachowane
+- ✅ Możliwość tworzenia backupów wszystkich pytań
+- ✅ Możliwość migracji danych między instalacjami
+- ✅ Przygotowanie pod wersję Android (format JSON jest obowiązujący)
+
+#### Statystyki zmian
+- Linie zmodyfikowane: ~70
+- Nowe linie: ~35
+- Wersja: 1.30 → 1.31
+- Typ zmiany: patch (krytyczna poprawka eksportu/importu)
+
+#### Backup
+- Utworzono backup: `index.html.backup-1.30.1`
+
+---
+
 ## [1.30] - 2025-01-19
 
 ### 🐛 Poprawka: exitPractice() wywołuje zły sekcję

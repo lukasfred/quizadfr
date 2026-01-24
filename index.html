@@ -1,6 +1,6 @@
 <!DOCTYPE html>
- <!-- Quiz Application v1.30 -->
-<!-- Latest updates: Rebuilt flashcard system, improved layout, compact progress panel -->
+ <!-- Quiz Application v1.31 -->
+<!-- Latest updates: Fixed JSON export/import for pairing/ordering question types -->
 <html lang="pl">
 
 <head>
@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📝 Quiz Application v1.30</title>
+    <title>📝 Quiz Application v1.31</title>
 
     <!-- ========== PWA META TAGS ========== -->
     <link rel="manifest" href="./manifest.json">
@@ -6065,7 +6065,7 @@
     <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="window.closeMobileNav()"></div>
 
     <div class="container">
-        <h1>📝 QuizApp <small style="font-size: 0.5em; color: #666;">v1.30</small></h1>
+        <h1>📝 QuizApp <small style="font-size: 0.5em; color: #666;">v1.31</small></h1>
 
         <div id="auth-section">
             <div class="question-item">
@@ -10388,17 +10388,35 @@
                 exportDate: new Date().toISOString(),
                 category: selectedCategory,
                 totalQuestions: questionsToExport.length,
-                questions: questionsToExport.map(q => ({
-                    id: q.id,
-                    type: q.type,
-                    text: q.text,
-                    options: q.options || [],
-                    correct: q.correct || [],
-                    category: q.category || "",
-                    tags: q.tags || [],
-                    explanation: q.explanation || "",
-                    imageData: q.imageData || ""
-                }))
+                questions: questionsToExport.map(q => {
+                    const exported = {
+                        id: q.id,
+                        type: q.type,
+                        text: q.text,
+                        category: q.category || "",
+                        tags: q.tags || [],
+                        explanation: q.explanation || "",
+                        imageData: q.imageData || ""
+                    };
+
+                    // Dla pairing - eksportuj pairs
+                    if (q.type === 'pairing') {
+                        exported.pairs = q.pairs || [];
+                        exported.options = [];
+                        exported.correct = [];
+                    } else {
+                        // Dla innych typów - eksportuj options i correct
+                        exported.options = q.options || [];
+                        exported.correct = q.correct || [];
+                    }
+
+                    // Dla ordering - eksportuj ordering
+                    if (q.type === 'ordering') {
+                        exported.ordering = q.ordering || [];
+                    }
+
+                    return exported;
+                })
             };
 
             // Konwersja do JSON z formatowaniem
@@ -10940,22 +10958,55 @@
                     // Importuj pytania
                     jsonData.questions.forEach((q, index) => {
                         // Walidacja struktury pojedynczego pytania
-                        if (!q.text || !q.options || !Array.isArray(q.options) || !q.correct) {
-                            console.warn("Nieprawidłowa struktura pytania #" + (index + 1), q);
+                        if (!q.text) {
+                            console.warn("Nieprawidłowa struktura pytania #" + (index + 1) + " - brak tekstu", q);
                             errors++;
                             return;
                         }
 
-                        if (q.options.length < 2) {
-                            console.warn("Pytanie #" + (index + 1) + " ma mniej niż 2 odpowiedzi");
-                            errors++;
-                            return;
-                        }
+                        // Dla pairing - waliduj pairs
+                        if (q.type === 'pairing') {
+                            if (!q.pairs || !Array.isArray(q.pairs) || q.pairs.length < 2) {
+                                console.warn("Pytanie pairing #" + (index + 1) + " ma nieprawidłowe pairs", q);
+                                errors++;
+                                return;
+                            }
+                            // Sprawdź czy każda para ma left i right
+                            const hasValidPairs = q.pairs.every(pair =>
+                                pair && pair.left && pair.left.trim() !== '' &&
+                                pair.right && pair.right.trim() !== ''
+                            );
+                            if (!hasValidPairs) {
+                                console.warn("Pytanie pairing #" + (index + 1) + " ma niekompletne pary", q);
+                                errors++;
+                                return;
+                            }
+                        } else if (q.type === 'ordering') {
+                            // Dla ordering - waliduj ordering
+                            if (!q.ordering || !Array.isArray(q.ordering) || q.ordering.length < 2) {
+                                console.warn("Pytanie ordering #" + (index + 1) + " ma nieprawidłowe ordering", q);
+                                errors++;
+                                return;
+                            }
+                        } else {
+                            // Dla single/multiple - waliduj options i correct
+                            if (!q.options || !Array.isArray(q.options)) {
+                                console.warn("Pytanie #" + (index + 1) + " ma nieprawidłowe options", q);
+                                errors++;
+                                return;
+                            }
 
-                        if (!Array.isArray(q.correct) || q.correct.length === 0) {
-                            console.warn("Pytanie #" + (index + 1) + " nie ma poprawnych odpowiedzi");
-                            errors++;
-                            return;
+                            if (q.options.length < 2) {
+                                console.warn("Pytanie #" + (index + 1) + " ma mniej niż 2 odpowiedzi");
+                                errors++;
+                                return;
+                            }
+
+                            if (!q.correct || !Array.isArray(q.correct) || q.correct.length === 0) {
+                                console.warn("Pytanie #" + (index + 1) + " nie ma poprawnych odpowiedzi");
+                                errors++;
+                                return;
+                            }
                         }
 
                         // Sprawdź czy pytanie już istnieje (po ID lub treści)
@@ -10974,13 +11025,27 @@
                             id: q.id || Date.now() + Math.random(),
                             type: q.type || "single",
                             text: q.text,
-                            options: q.options,
-                            correct: q.correct,
                             category: q.category || "",
                             tags: q.tags || [],
                             explanation: q.explanation || "",
                             imageData: q.imageData || ""
                         };
+
+                        // Dla pairing - dodaj pairs
+                        if (q.type === 'pairing') {
+                            newQ.pairs = q.pairs || [];
+                            newQ.options = [];
+                            newQ.correct = [];
+                        } else if (q.type === 'ordering') {
+                            // Dla ordering - dodaj ordering
+                            newQ.ordering = q.ordering || [];
+                            newQ.options = [];
+                            newQ.correct = [];
+                        } else {
+                            // Dla single/multiple - dodaj options i correct
+                            newQ.options = q.options || [];
+                            newQ.correct = q.correct || [];
+                        }
 
                         if (isValidQuestion(newQ)) {
                             questions.push(newQ);
